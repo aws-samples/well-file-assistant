@@ -6,7 +6,7 @@ export type ChatMessage = {
   __typename: "ChatMessage",
   chatSessionId?: string | null,
   content: string,
-  createdAt: string,
+  createdAt?: string | null,
   id: string,
   owner?: string | null,
   role?: ChatMessageRole | null,
@@ -38,6 +38,16 @@ export type ModelChatMessageConnection = {
   __typename: "ModelChatMessageConnection",
   items:  Array<ChatMessage | null >,
   nextToken?: string | null,
+};
+
+export type ModelStringKeyConditionInput = {
+  beginsWith?: string | null,
+  between?: Array< string | null > | null,
+  eq?: string | null,
+  ge?: string | null,
+  gt?: string | null,
+  le?: string | null,
+  lt?: string | null,
 };
 
 export type ModelChatMessageFilterInput = {
@@ -117,6 +127,12 @@ export type ModelChatMessageRoleInput = {
   ne?: ChatMessageRole | null,
 };
 
+export enum ModelSortDirection {
+  ASC = "ASC",
+  DESC = "DESC",
+}
+
+
 export type ModelChatSessionFilterInput = {
   and?: Array< ModelChatSessionFilterInput | null > | null,
   createdAt?: ModelStringInput | null,
@@ -152,6 +168,7 @@ export type ModelChatMessageConditionInput = {
 export type CreateChatMessageInput = {
   chatSessionId?: string | null,
   content: string,
+  createdAt?: string | null,
   id?: string | null,
   owner?: string | null,
   role?: ChatMessageRole | null,
@@ -186,6 +203,7 @@ export type DeleteChatSessionInput = {
 export type UpdateChatMessageInput = {
   chatSessionId?: string | null,
   content?: string | null,
+  createdAt?: string | null,
   id: string,
   owner?: string | null,
   role?: ChatMessageRole | null,
@@ -263,7 +281,7 @@ export type GetChatMessageQuery = {
     __typename: "ChatMessage",
     chatSessionId?: string | null,
     content: string,
-    createdAt: string,
+    createdAt?: string | null,
     id: string,
     owner?: string | null,
     role?: ChatMessageRole | null,
@@ -311,6 +329,45 @@ export type GetChatSessionQuery = {
   } | null,
 };
 
+export type GetInfoFromPdfQueryVariables = {
+  s3Key: string,
+  tableColumns: string,
+  tablePurpose: string,
+};
+
+export type GetInfoFromPdfQuery = {
+  getInfoFromPdf?: string | null,
+};
+
+export type ListChatMessageByChatSessionIdAndCreatedAtQueryVariables = {
+  chatSessionId: string,
+  createdAt?: ModelStringKeyConditionInput | null,
+  filter?: ModelChatMessageFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+  sortDirection?: ModelSortDirection | null,
+};
+
+export type ListChatMessageByChatSessionIdAndCreatedAtQuery = {
+  listChatMessageByChatSessionIdAndCreatedAt?:  {
+    __typename: "ModelChatMessageConnection",
+    items:  Array< {
+      __typename: "ChatMessage",
+      chatSessionId?: string | null,
+      content: string,
+      createdAt?: string | null,
+      id: string,
+      owner?: string | null,
+      role?: ChatMessageRole | null,
+      tool_call_id?: string | null,
+      tool_calls?: string | null,
+      tool_name?: string | null,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
 export type ListChatMessagesQueryVariables = {
   filter?: ModelChatMessageFilterInput | null,
   limit?: number | null,
@@ -324,7 +381,7 @@ export type ListChatMessagesQuery = {
       __typename: "ChatMessage",
       chatSessionId?: string | null,
       content: string,
-      createdAt: string,
+      createdAt?: string | null,
       id: string,
       owner?: string | null,
       role?: ChatMessageRole | null,
@@ -368,7 +425,7 @@ export type CreateChatMessageMutation = {
     __typename: "ChatMessage",
     chatSessionId?: string | null,
     content: string,
-    createdAt: string,
+    createdAt?: string | null,
     id: string,
     owner?: string | null,
     role?: ChatMessageRole | null,
@@ -417,7 +474,7 @@ export type DeleteChatMessageMutation = {
     __typename: "ChatMessage",
     chatSessionId?: string | null,
     content: string,
-    createdAt: string,
+    createdAt?: string | null,
     id: string,
     owner?: string | null,
     role?: ChatMessageRole | null,
@@ -466,7 +523,7 @@ export type UpdateChatMessageMutation = {
     __typename: "ChatMessage",
     chatSessionId?: string | null,
     content: string,
-    createdAt: string,
+    createdAt?: string | null,
     id: string,
     owner?: string | null,
     role?: ChatMessageRole | null,
@@ -515,7 +572,7 @@ export type OnCreateChatMessageSubscription = {
     __typename: "ChatMessage",
     chatSessionId?: string | null,
     content: string,
-    createdAt: string,
+    createdAt?: string | null,
     id: string,
     owner?: string | null,
     role?: ChatMessageRole | null,
@@ -564,7 +621,7 @@ export type OnDeleteChatMessageSubscription = {
     __typename: "ChatMessage",
     chatSessionId?: string | null,
     content: string,
-    createdAt: string,
+    createdAt?: string | null,
     id: string,
     owner?: string | null,
     role?: ChatMessageRole | null,
@@ -613,7 +670,7 @@ export type OnUpdateChatMessageSubscription = {
     __typename: "ChatMessage",
     chatSessionId?: string | null,
     content: string,
-    createdAt: string,
+    createdAt?: string | null,
     id: string,
     owner?: string | null,
     role?: ChatMessageRole | null,

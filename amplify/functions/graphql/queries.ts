@@ -68,6 +68,58 @@ export const getChatSession = /* GraphQL */ `query GetChatSession($id: ID!) {
   APITypes.GetChatSessionQueryVariables,
   APITypes.GetChatSessionQuery
 >;
+export const getInfoFromPdf = /* GraphQL */ `query GetInfoFromPdf(
+  $s3Key: String!
+  $tableColumns: AWSJSON!
+  $tablePurpose: String!
+) {
+  getInfoFromPdf(
+    s3Key: $s3Key
+    tableColumns: $tableColumns
+    tablePurpose: $tablePurpose
+  )
+}
+` as GeneratedQuery<
+  APITypes.GetInfoFromPdfQueryVariables,
+  APITypes.GetInfoFromPdfQuery
+>;
+export const listChatMessageByChatSessionIdAndCreatedAt = /* GraphQL */ `query ListChatMessageByChatSessionIdAndCreatedAt(
+  $chatSessionId: ID!
+  $createdAt: ModelStringKeyConditionInput
+  $filter: ModelChatMessageFilterInput
+  $limit: Int
+  $nextToken: String
+  $sortDirection: ModelSortDirection
+) {
+  listChatMessageByChatSessionIdAndCreatedAt(
+    chatSessionId: $chatSessionId
+    createdAt: $createdAt
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+    sortDirection: $sortDirection
+  ) {
+    items {
+      chatSessionId
+      content
+      createdAt
+      id
+      owner
+      role
+      tool_call_id
+      tool_calls
+      tool_name
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListChatMessageByChatSessionIdAndCreatedAtQueryVariables,
+  APITypes.ListChatMessageByChatSessionIdAndCreatedAtQuery
+>;
 export const listChatMessages = /* GraphQL */ `query ListChatMessages(
   $filter: ModelChatMessageFilterInput
   $limit: Int

@@ -8,7 +8,7 @@ import { HumanMessage, AIMessage, ToolMessage, BaseMessage, MessageContentText }
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 
 import * as APITypes from "../graphql/API";
-import { listChatMessages } from "../graphql/queries"
+import { listChatMessages, listChatMessageByChatSessionIdAndCreatedAt } from "../graphql/queries"
 import { calculatorTool, wellTableTool } from './toolBox';
 
 Amplify.configure(
@@ -148,27 +148,19 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
 
     try {
 
-        
-
         // Get the chat messages from the chat session
-        const chatSessionMessages = await amplifyClient.graphql({
-            query: listChatMessages,
+        const chatSessionMessages = await amplifyClient.graphql({ //listChatMessageByChatSessionIdAndCreatedAt
+            query: listChatMessageByChatSessionIdAndCreatedAt,
             variables: {
-                limit: 1000, //TODO, impliment sorting so you can only get the last 10 messages
-                filter: {
-                    chatSessionId: {
-                        eq: event.arguments.chatSessionId
-                    }
-                }
+                limit: 20,
+                chatSessionId: event.arguments.chatSessionId,
+                sortDirection: APITypes.ModelSortDirection.DESC
             }
         })
 
-        //Sort the chatSessionMessages by createdAt time
-        const sortedMessages = chatSessionMessages.data.listChatMessages.items
-            .sort((a: { createdAt: string; }, b: { createdAt: any; }) => a.createdAt.localeCompare(b.createdAt))
-            .slice(-20);
+        const sortedMessages = chatSessionMessages.data.listChatMessageByChatSessionIdAndCreatedAt.items;
 
-        //Remove all of the messages before the first message with the role of human
+        // Remove all of the messages before the first message with the role of human
         const firstHumanMessageIndex = sortedMessages.findIndex((message) => message.role === 'human');
         const sortedMessagesStartingWithHumanMessage = sortedMessages.slice(firstHumanMessageIndex)
 

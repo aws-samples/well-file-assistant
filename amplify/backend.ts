@@ -1,6 +1,7 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource.js';
-import { data, getChatResponesHandler, getInfoFromPdf} from './data/resource.js';
+import { data, getChatResponesHandler, getInfoFromPdf } from './data/resource.js';
+// import { preSignUp } from './auth/pre-sign-up/resource';
 import { storage } from './storage/resource.js';
 import * as cdk from 'aws-cdk-lib'
 import * as iam from 'aws-cdk-lib/aws-iam';
@@ -22,6 +23,7 @@ import { AwsSolutionsChecks } from 'cdk-nag'
 import { NagSuppressions } from 'cdk-nag'
 import { Aspects } from 'aws-cdk-lib';
 import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
+// import { preSignUp } from './functions/preSignUpHandler/resource';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -33,13 +35,29 @@ const tags = {
   Environment: 'dev',
 }
 
+
+
 const backend = defineBackend({
   auth,
   data,
   storage,
   getChatResponesHandler,
-  getInfoFromPdf
+  getInfoFromPdf,
+  // preSignUp
 });
+
+// const customBackendAssets = defineBackend({});
+
+function applyTagsToRootStack(stack: cdk.Stack) {
+  const rootStack = cdk.Stack.of(customStack).nestedStackParent
+  if (!rootStack) throw new Error('Root stack not found')
+  //Apply tags to all the nested stacks
+  Object.entries(tags).map(([key, value]) => {
+    cdk.Tags.of(rootStack).add(key, value)
+  })
+  cdk.Tags.of(rootStack).add('rootStackName', rootStack.stackName)
+}
+
 
 //Don't allow unauthenticated identites in the cognito identity pool
 const { cfnIdentityPool, cfnUserPool } = backend.auth.resources.cfnResources;
@@ -48,16 +66,50 @@ cfnIdentityPool.allowUnauthenticatedIdentities = false;
 const dataBucketName = backend.storage.resources.bucket.bucketName
 
 const customStack = backend.createStack('customStack')
+applyTagsToRootStack(customStack)
 
-// This block applies tags to all resources created in this app
+// // This block applies tags to all resources created in this app
 const rootStack = cdk.Stack.of(customStack).nestedStackParent
 if (!rootStack) throw new Error('Root stack not found')
-//Apply tags to all the nested stacks
-Object.entries(tags).map(([key, value]) => {
-  cdk.Tags.of(rootStack).add(key, value)
-})
-//Tag all resources with the root stack name
-cdk.Tags.of(rootStack).add('rootStackName', rootStack.stackName)
+
+// //Apply tags to all the nested stacks
+// Object.entries(tags).map(([key, value]) => {
+//   cdk.Tags.of(rootStack).add(key, value)
+// })
+// //Tag all resources with the root stack name
+// cdk.Tags.of(rootStack).add('rootStackName', rootStack.stackName)
+
+// const preSignUpFunction = new NodejsFunction(customStack, 'PreSignUpHandler', {
+//   runtime: lambda.Runtime.NODEJS_20_X,
+//   entry: path.join(__dirname, 'functions', 'preSignUpHandler', 'handler.ts'),
+//   bundling: {
+//     format: OutputFormat.ESM,
+//     loader: {
+//       '.node': 'file',
+//     },
+//     // inject: [join(__dirname, 'functions', 'shims.js')],
+//     bundleAwsSDK: true,
+//     minify: true,
+//     sourceMap: true,
+//   },
+//   environment: {
+//     'ALLOWED_EMAIL_DOMAIN_LIST': 'amazon.com,exampleDomainName.com'
+//   },
+// });
+
+// //Create the sign up lambda trigger
+// authBackend.auth.resources.cfnResources.cfnUserPool.lambdaConfig = {
+//   // ...backend.auth.resources.cfnResources.cfnUserPool.lambdaConfig,
+//   preSignUp: authBackend.preSignUp.resources.lambda.functionArn,
+//   // preSignUp: preSignUpBackend.preSignUp.resources.lambda.functionArn,
+// };
+
+// // Grant the user pool permission to invoke the Lambda function
+// backend.preSignUp.resources.lambda.addPermission('UserPoolInvoke', {
+//   principal: new iam.ServicePrincipal('cognito-idp.amazonaws.com'),
+//   action: 'lambda:InvokeFunction',
+//   sourceArn: backend.auth.resources.cfnResources.cfnUserPool.attrArn,
+// });
 
 //Deploy the test data to the s3 bucket
 const wellFileDeployment = new s3Deployment.BucketDeployment(customStack, 'test-file-deployment', {
@@ -121,7 +173,7 @@ const ghostScriptLayer = lambda.LayerVersion.fromLayerVersionArn(customStack, 'G
 
 const queryReportImageLambda = new NodejsFunction(customStack, 'QueryReportImagesTs', {
   runtime: lambda.Runtime.NODEJS_20_X,
-  entry: path.join(__dirname, 'functions', 'getInfoFromPdf','index.ts'),
+  entry: path.join(__dirname, 'functions', 'getInfoFromPdf', 'index.ts'),
   bundling: {
     format: OutputFormat.CJS,
     loader: {
@@ -143,56 +195,6 @@ const queryReportImageLambda = new NodejsFunction(customStack, 'QueryReportImage
   },
   layers: [imageMagickLayer, ghostScriptLayer]
 });
-
-
-
-// const queryReportImageLambdaPy = new lambda.DockerImageFunction(customStack, 'QueryReportImagesPy', {
-//   code: lambda.DockerImageCode.fromImageAsset(path.join(
-//       __dirname, 'functions', 'getInfoFromPdfPy'
-//   )),
-//   timeout: cdk.Duration.minutes(15),
-//   memorySize: 3000,
-//   role: queryReportsLambdaRole,
-//   environment: {
-//       'DATA_BUCKET_NAME': dataBucketName,
-//       // 'MODEL_ID': 'anthropic.claude-3-sonnet-20240229-v1:0',
-//       'MODEL_ID': 'anthropic.claude-3-haiku-20240307-v1:0',
-//       'MAX_TOKENS': '4096'
-//   }
-// });
-
-// const queryReportImageLambdaPy = new lambda.Function(customStack, "QueryReportImagesPy1", {
-//   runtime: lambda.Runtime.PYTHON_3_10,
-//   handler: "index.handler",
-//   code: lambda.Code.fromAsset(path.join(__dirname, 'functions', 'getInfoFromPdfPy'), {
-//     bundling: {
-//       image: lambda.Runtime.PYTHON_3_10.bundlingImage,
-//       command: [
-//         "bash", "-c", "pip install -r requirements.txt -t /asset-output && cp -au . /asset-output"
-//       ]
-//     }
-//   }),
-//   architecture: lambda.Architecture.ARM_64,
-//   timeout: cdk.Duration.seconds(300),
-//   environment: {
-//     'DATA_BUCKET_NAME': dataBucketName,
-//     'MODEL_ID': 'anthropic.claude-3-haiku-20240307-v1:0',
-//   },
-//   role: queryReportsLambdaRole
-// })
-
-// const queryReportImageLambdaPy = new CfnFunction(customStack, "QueryReportImagesPy1", {
-//   handler: "index.handler",
-//   runtime: lambda.Runtime.PYTHON_3_12.name,
-//   architectures: [lambda.Architecture.ARM_64.name],
-//   codeUri: path.join(__dirname, 'functions', 'getInfoFromPdfPy'),
-//   // environment: 
-//   //   Variables:{
-//   //   'DATA_BUCKET_NAME': dataBucketName,
-//   //   'MODEL_ID': 'anthropic.claude-3-haiku-20240307-v1:0',
-//   // },
-//   // role: queryReportsLambdaRole
-// })
 
 // Create a Step Functions state machine
 const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportImagesStateMachine2', {
@@ -249,9 +251,9 @@ const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportIm
             // lambdaFunction: backend.getInfoFromPdf.resources.lambda,
             payloadResponseOnly: true,
             // payload: {}
-            
+
           }).addRetry({
-            maxAttempts: 20, 
+            maxAttempts: 20,
             maxDelay: cdk.Duration.seconds(5),
             errors: [
               'ThrottlingException',

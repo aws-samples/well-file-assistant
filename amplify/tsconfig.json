@@ -10,7 +10,6 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "noEmit": true,
-
     "preserveConstEnums": true,
     "inlineSourceMap": true,
     "inlineSources": true,
@@ -19,5 +18,8 @@
         "../.amplify/generated/*"
       ]
     }
-  }
+  },
+  "exclude": [
+    "auth/*"
+  ]
 }

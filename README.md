@@ -19,10 +19,12 @@ Deploy this app using AWS Amplify.
 1. Fork this repository into your GitHub account. 
 2. Navigate to the [AWS Amplify](https://console.aws.amazon.com/amplify) page in the AWS Console.
 3. Create a new app using the repository in your GitHub account.
+4. Enable access to the following [Amazon Bedrock models](https://console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess)
+    1. Anthropic - Claude 3 Haiku
+    2. Anthropic - Claude 3 Sonnet
 
 
 ## Usage
-
 1. Navigate to the app's domain. You can find the domain by opening the app in the AWS Amplify console.
 1. Create a new user by clicking "Log in / Sign up" button on the right side of the top banner. You'll enter an email address and password.
 1. Click the "Chat" button in the top banner to reach the chat interface. Try this example prompt:
