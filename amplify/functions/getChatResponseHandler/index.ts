@@ -225,11 +225,14 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
             }
         }
         return "Invocation Successful!";
-        
-    } catch (error) {
-        if (error instanceof Error) await publishMessage(event.arguments.chatSessionId, event.identity.sub, new AIMessage({ content: error.message }))
 
-        return "error"
+    } catch (error) {
+
+        if (error instanceof Error) {
+            const AIErrorMessage = new AIMessage({ content: error.message + `\n model id: ${process.env.MODEL_ID}` })
+            await publishMessage(event.arguments.chatSessionId, event.identity.sub, AIErrorMessage)
+        }
+        return "Error"
     }
 
 };
