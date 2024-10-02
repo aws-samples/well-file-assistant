@@ -70,7 +70,7 @@ const createChatMessage = /* GraphQL */ `mutation CreateChatMessage(
   ` as GeneratedMutation<
     APITypes.CreateChatMessageMutationVariables,
     APITypes.CreateChatMessageMutation
-  >;
+>;
 
 
 function getLangChainMessageContent(message: HumanMessage | AIMessage | ToolMessage): string | void {
@@ -146,80 +146,90 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
     if (!event.identity) throw new Error("Event does not contain identity");
     if (!('sub' in event.identity)) throw new Error("Event does not contain user");
 
-    // Get the chat messages from the chat session
-    const chatSessionMessages = await amplifyClient.graphql({
-        query: listChatMessages,
-        variables: {
-            limit: 1000, //TODO, impliment sorting so you can only get the last 10 messages
-            filter: {
-                chatSessionId: {
-                    eq: event.arguments.chatSessionId
+    try {
+
+        
+
+        // Get the chat messages from the chat session
+        const chatSessionMessages = await amplifyClient.graphql({
+            query: listChatMessages,
+            variables: {
+                limit: 1000, //TODO, impliment sorting so you can only get the last 10 messages
+                filter: {
+                    chatSessionId: {
+                        eq: event.arguments.chatSessionId
+                    }
                 }
             }
-        }
-    })
-
-    //Sort the chatSessionMessages by createdAt time
-    const sortedMessages = chatSessionMessages.data.listChatMessages.items
-        .sort((a: { createdAt: string; }, b: { createdAt: any; }) => a.createdAt.localeCompare(b.createdAt))
-        .slice(-20);
-
-    //Remove all of the messages before the first message with the role of human
-    const firstHumanMessageIndex = sortedMessages.findIndex((message) => message.role === 'human');
-    const sortedMessagesStartingWithHumanMessage = sortedMessages.slice(firstHumanMessageIndex)
-
-    console.log('messages from gql query: ', sortedMessagesStartingWithHumanMessage)
-
-    //Here we're using the last 10 messages for memory
-    const messages: BaseMessage[] = sortedMessagesStartingWithHumanMessage.map((message) => {
-        if (message.role === 'human') {
-            return new HumanMessage({
-                content: message.content,
-            })
-        } else if (message.role === 'ai') {
-            return new AIMessage({
-                content: [{
-                    type: 'text',
-                    text: message.content
-                }],
-                tool_calls: JSON.parse(message.tool_calls || '[]')
-            })
-        } else {
-            return new ToolMessage({
-                content: message.content,
-                tool_call_id: message.tool_call_id || "",
-                name: message.tool_name || ""
-            })
-        }
-    })
-
-    console.log("mesages in langchain form: ", messages)
-
-    const agentModel = new ChatBedrockConverse({
-        model: process.env.MODEL_ID,
-        temperature: 0
-    });
-
-    const agent = createReactAgent({
-        llm: agentModel,
-        tools: agentTools,
-    });
-
-    const input = {
-        messages: messages,
-    }
-
-    for await (
-        const chunk of await agent.stream(input, {
-            streamMode: "values",
         })
-    ) {
-        const newMessage: BaseMessage = chunk.messages[chunk.messages.length - 1];
 
-        if (!(newMessage instanceof HumanMessage)) {
-            await publishMessage(event.arguments.chatSessionId, event.identity.sub, newMessage)
+        //Sort the chatSessionMessages by createdAt time
+        const sortedMessages = chatSessionMessages.data.listChatMessages.items
+            .sort((a: { createdAt: string; }, b: { createdAt: any; }) => a.createdAt.localeCompare(b.createdAt))
+            .slice(-20);
+
+        //Remove all of the messages before the first message with the role of human
+        const firstHumanMessageIndex = sortedMessages.findIndex((message) => message.role === 'human');
+        const sortedMessagesStartingWithHumanMessage = sortedMessages.slice(firstHumanMessageIndex)
+
+        console.log('messages from gql query: ', sortedMessagesStartingWithHumanMessage)
+
+        //Here we're using the last 10 messages for memory
+        const messages: BaseMessage[] = sortedMessagesStartingWithHumanMessage.map((message) => {
+            if (message.role === 'human') {
+                return new HumanMessage({
+                    content: message.content,
+                })
+            } else if (message.role === 'ai') {
+                return new AIMessage({
+                    content: [{
+                        type: 'text',
+                        text: message.content
+                    }],
+                    tool_calls: JSON.parse(message.tool_calls || '[]')
+                })
+            } else {
+                return new ToolMessage({
+                    content: message.content,
+                    tool_call_id: message.tool_call_id || "",
+                    name: message.tool_name || ""
+                })
+            }
+        })
+
+        console.log("mesages in langchain form: ", messages)
+
+        const agentModel = new ChatBedrockConverse({
+            model: process.env.MODEL_ID,
+            temperature: 0
+        });
+
+        const agent = createReactAgent({
+            llm: agentModel,
+            tools: agentTools,
+        });
+
+        const input = {
+            messages: messages,
         }
+
+        for await (
+            const chunk of await agent.stream(input, {
+                streamMode: "values",
+            })
+        ) {
+            const newMessage: BaseMessage = chunk.messages[chunk.messages.length - 1];
+
+            if (!(newMessage instanceof HumanMessage)) {
+                await publishMessage(event.arguments.chatSessionId, event.identity.sub, newMessage)
+            }
+        }
+        return "Invocation Successful!";
+        
+    } catch (error) {
+        if (error instanceof Error) await publishMessage(event.arguments.chatSessionId, event.identity.sub, new AIMessage({ content: error.message }))
+
+        return "error"
     }
 
-    return "Invocation Successful!";
 };
