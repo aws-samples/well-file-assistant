@@ -24,6 +24,8 @@ export interface ChatUIMessageProps {
 
 export default function ChatUIMessage(props: ChatUIMessageProps) {
   const [hideRows, setHideRows] = useState<boolean>(true)
+  if (!props.message.createdAt) throw new Error("Message createdAt missing");
+
   return (
     <div>
       {props.message?.role != 'human' && (
