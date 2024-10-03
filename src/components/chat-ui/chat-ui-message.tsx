@@ -4,13 +4,12 @@ import {
   Container,
   Popover,
   Spinner,
-  StatusIndicator,
-  TextContent,
+  StatusIndicator
 } from "@cloudscape-design/components";
-// import { format, parseISO } from 'date-fns';
+
 import remarkGfm from "remark-gfm";
 import ReactMarkdown from "react-markdown";
-// import { ChatMessage, ChatMessageType } from "./types";
+
 import type { Schema } from '@/../amplify/data/resource';
 import { formatDate } from "@/utils/date-utils";
 
@@ -111,45 +110,6 @@ export default function ChatUIMessage(props: ChatUIMessageProps) {
             >
               {props.message.content}
             </ReactMarkdown>
-
-            {/* <ReactMarkdown
-              children={props.message.content}
-              remarkPlugins={[remarkGfm]}
-              components={{
-                pre(props) {
-                  const { children, ...rest } = props;
-                  return (
-                    <pre {...rest} className={styles.codeMarkdown}>
-                      {children}
-                    </pre>
-                  );
-                },
-                table(props) {
-                  const { children, ...rest } = props;
-                  return (
-                    <table {...rest} className={styles.markdownTable}>
-                      {children}
-                    </table>
-                  );
-                },
-                th(props) {
-                  const { children, ...rest } = props;
-                  return (
-                    <th {...rest} className={styles.markdownTableCell}>
-                      {children}
-                    </th>
-                  );
-                },
-                td(props) {
-                  const { children, ...rest } = props;
-                  return (
-                    <td {...rest} className={styles.markdownTableCell}>
-                      {children}
-                    </td>
-                  );
-                },
-              }}
-            /> */}
           </>
         </Container>
       )}
@@ -160,9 +120,6 @@ export default function ChatUIMessage(props: ChatUIMessageProps) {
             {props.message.content}
           </ReactMarkdown>
         </>
-        // <TextContent>
-        //   <strong>{props.message.content}</strong>
-        // </TextContent>
       )}
     </div>
   );

@@ -279,6 +279,13 @@ backend.preSignUp.resources.lambda.addToRolePolicy(
   })
 )
 
+backend.preSignUp.resources.lambda.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: ["cognito-idp:DescribeUserPool"],
+    resources: [backend.auth.resources.userPool.userPoolArn],
+  })
+)
+
 //Add request level logging to the graphql api
 const cloudWatchLogRole = new iam.Role(customStack, 'CloudWatchLogRole', {
   assumedBy: new iam.ServicePrincipal('appsync.amazonaws.com'),
