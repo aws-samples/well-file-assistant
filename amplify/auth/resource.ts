@@ -1,7 +1,7 @@
 // https://docs.amplify.aws/react/build-a-backend/functions/examples/email-domain-filtering/
 
 import { defineAuth } from '@aws-amplify/backend';
-import { preSignUp } from './pre-sign-up/resource';
+import { preSignUp } from '../functions/preSignUp/resource';
 
 /**
  * Define and configure your auth resource

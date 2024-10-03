@@ -8,7 +8,7 @@ import { HumanMessage, AIMessage, ToolMessage, BaseMessage, MessageContentText }
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 
 import * as APITypes from "../graphql/API";
-import { listChatMessages, listChatMessageByChatSessionIdAndCreatedAt } from "../graphql/queries"
+import { listChatMessageByChatSessionIdAndCreatedAt } from "../graphql/queries"
 import { calculatorTool, wellTableTool } from './toolBox';
 
 Amplify.configure(
@@ -158,13 +158,13 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
             }
         })
 
-        const sortedMessages = chatSessionMessages.data.listChatMessageByChatSessionIdAndCreatedAt.items;
+        console.log('messages from gql query: ', chatSessionMessages)
+
+        const sortedMessages = chatSessionMessages.data.listChatMessageByChatSessionIdAndCreatedAt.items.reverse()
 
         // Remove all of the messages before the first message with the role of human
         const firstHumanMessageIndex = sortedMessages.findIndex((message) => message.role === 'human');
         const sortedMessagesStartingWithHumanMessage = sortedMessages.slice(firstHumanMessageIndex)
-
-        console.log('messages from gql query: ', sortedMessagesStartingWithHumanMessage)
 
         //Here we're using the last 10 messages for memory
         const messages: BaseMessage[] = sortedMessagesStartingWithHumanMessage.map((message) => {

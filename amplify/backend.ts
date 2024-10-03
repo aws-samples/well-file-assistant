@@ -1,7 +1,7 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource.js';
 import { data, getChatResponesHandler, getInfoFromPdf } from './data/resource.js';
-// import { preSignUp } from './auth/pre-sign-up/resource';
+import { preSignUp } from './functions/preSignUp/resource.js';
 import { storage } from './storage/resource.js';
 import * as cdk from 'aws-cdk-lib'
 import * as iam from 'aws-cdk-lib/aws-iam';
@@ -35,16 +35,20 @@ const tags = {
   Environment: 'dev',
 }
 
-
-
 const backend = defineBackend({
   auth,
   data,
   storage,
   getChatResponesHandler,
   getInfoFromPdf,
-  // preSignUp
+  preSignUp
 });
+
+backend.addOutput({
+  custom: {
+    pre_sign_up_handler_lambda_arn: backend.preSignUp.resources.lambda.functionArn
+  }
+})
 
 // const customBackendAssets = defineBackend({});
 
@@ -72,13 +76,6 @@ applyTagsToRootStack(customStack)
 const rootStack = cdk.Stack.of(customStack).nestedStackParent
 if (!rootStack) throw new Error('Root stack not found')
 
-// //Apply tags to all the nested stacks
-// Object.entries(tags).map(([key, value]) => {
-//   cdk.Tags.of(rootStack).add(key, value)
-// })
-// //Tag all resources with the root stack name
-// cdk.Tags.of(rootStack).add('rootStackName', rootStack.stackName)
-
 // const preSignUpFunction = new NodejsFunction(customStack, 'PreSignUpHandler', {
 //   runtime: lambda.Runtime.NODEJS_20_X,
 //   entry: path.join(__dirname, 'functions', 'preSignUpHandler', 'handler.ts'),
@@ -104,12 +101,19 @@ if (!rootStack) throw new Error('Root stack not found')
 //   // preSignUp: preSignUpBackend.preSignUp.resources.lambda.functionArn,
 // };
 
-// // Grant the user pool permission to invoke the Lambda function
-// backend.preSignUp.resources.lambda.addPermission('UserPoolInvoke', {
-//   principal: new iam.ServicePrincipal('cognito-idp.amazonaws.com'),
-//   action: 'lambda:InvokeFunction',
-//   sourceArn: backend.auth.resources.cfnResources.cfnUserPool.attrArn,
-// });
+// Create an SSM parameter
+const ssmParameter = new cdk.aws_ssm.StringParameter(customStack, 'AllowedEmailDomainList', {
+  parameterName: `/well-file-assistant/${rootStack.stackName}/allowed-email-domain-list`,
+  stringValue: 'amazon.com,exampleDomainName.com',
+});
+
+
+// Grant the user pool permission to invoke the Lambda function
+backend.preSignUp.resources.lambda.addPermission('UserPoolInvoke', {
+  principal: new iam.ServicePrincipal('cognito-idp.amazonaws.com'),
+  action: 'lambda:InvokeFunction',
+  sourceArn: backend.auth.resources.cfnResources.cfnUserPool.attrArn,
+});
 
 //Deploy the test data to the s3 bucket
 const wellFileDeployment = new s3Deployment.BucketDeployment(customStack, 'test-file-deployment', {
@@ -269,6 +273,7 @@ const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportIm
 });
 
 backend.getChatResponesHandler.addEnvironment('STEP_FUNCTION_ARN', queryImagesStateMachine.stateMachineArn)
+backend.preSignUp.addEnvironment('ALLOWED_EMAIL_DOMAINS_SSM_PARAMETER_NAME', ssmParameter.parameterName)
 // backend.getInfoFromPdf.addEnvironment('DATA_BUCKET_NAME', dataBucketName)
 
 backend.getChatResponesHandler.resources.lambda.addToRolePolicy(
@@ -304,6 +309,13 @@ backend.getInfoFromPdf.resources.lambda.addToRolePolicy(
     resources: [
       `arn:aws:s3:::${dataBucketName}/*`
     ],
+  })
+)
+
+backend.preSignUp.resources.lambda.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: ["ssm:GetParameter"],
+    resources: [ssmParameter.parameterArn],
   })
 )
 
