@@ -1,8 +1,8 @@
 import { defineBackend } from '@aws-amplify/backend';
-import { auth } from './auth/resource.js';
-import { data, getChatResponesHandler, getInfoFromPdf } from './data/resource.js';
-import { preSignUp } from './functions/preSignUp/resource.js';
-import { storage } from './storage/resource.js';
+import { auth } from './auth/resource';
+import { data, getChatResponesHandler, getInfoFromPdf } from './data/resource';
+import { preSignUp } from './functions/preSignUp/resource';
+import { storage } from './storage/resource';
 import * as cdk from 'aws-cdk-lib'
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
@@ -14,7 +14,7 @@ import * as s3Deployment from 'aws-cdk-lib/aws-s3-deployment';
 import * as appSync from 'aws-cdk-lib/aws-appsync';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { CfnApplication, CfnFunction } from 'aws-cdk-lib/aws-sam';
+import { CfnApplication } from 'aws-cdk-lib/aws-sam';
 
 import { join } from 'path';
 
@@ -33,6 +33,10 @@ const tags = {
   Project: 'well-file-assistant',
   Environment: 'dev',
 }
+
+// const authBackend = defineBackend({
+//   auth
+// })
 
 const backend = defineBackend({
   auth,
@@ -91,7 +95,7 @@ backend.preSignUp.resources.lambda.addPermission('UserPoolInvoke', {
 
 //Deploy the test data to the s3 bucket
 const wellFileDeployment = new s3Deployment.BucketDeployment(customStack, 'test-file-deployment', {
-  sources: [s3Deployment.Source.asset(path.join(rootDir, 'test-data'))],
+  sources: [s3Deployment.Source.asset(path.join(rootDir, 'testData'))],
   destinationBucket: backend.storage.resources.bucket,
   destinationKeyPrefix: 'well-files/'
 });
