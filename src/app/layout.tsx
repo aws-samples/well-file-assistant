@@ -6,7 +6,6 @@ import { NavBar } from "@/components/NavBar";
 import ConfigureAmplify from '@/components/ConfigureAmplify';
 import Providers from '@/components/providers';
 
-
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {

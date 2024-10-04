@@ -138,7 +138,7 @@ async function publishMessage(chatSessionId: string, owner: string, message: Hum
 
 export const handler: Schema["getChatResponse"]["functionHandler"] = async (event) => {
 
-    console.log('event: ', event)
+    // console.log('event: ', event)
     // console.log('context: ', context)
     // console.log('Amplify env: ', env)
 
@@ -158,7 +158,7 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
             }
         })
 
-        console.log('messages from gql query: ', chatSessionMessages)
+        // console.log('messages from gql query: ', chatSessionMessages)
 
         const sortedMessages = chatSessionMessages.data.listChatMessageByChatSessionIdAndCreatedAt.items.reverse()
 

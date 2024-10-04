@@ -52,7 +52,7 @@ const schema = a.schema({
     .arguments({ 
       input: a.string().required(), 
       chatSessionId: a.string(), 
-      messages: a.string().array()
+      // messages: a.string().array()
       // messages: a.ref("ChatMessage").array()
       // messages: a.customType({
       //   body: a.string(),
