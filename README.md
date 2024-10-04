@@ -29,16 +29,16 @@ This repository contains a tool for retrieving information from multiple PDF fil
 Deploy this app using AWS Amplify. 
 1. Fork this repository into your GitHub account. 
 1. Navigate to the [AWS Amplify](https://console.aws.amazon.com/amplify) page in the AWS Console.
-1. Create a new app using the repository in your GitHub account.
-1. Enable access to the following [Amazon Bedrock models](https://console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess)
+1. Create a new app using the repository in your GitHub account. Select the "main" branch of the project.
+1. Enable access to the following [Amazon Bedrock models](https://console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess) in the AWS console.
     1. Anthropic - Claude 3 Haiku
     1. Anthropic - Claude 3 Sonnet
 1. To restrict email address domains which are able to sign up in the app, follow these steps:
     1. Give the Amplify build environment permisson to update the cognito user pool
-        1. On the App's Amplify page, navigate to "App settings -> Genral Settings" and look for the Service Role Arn
-        1. Navigate to the AWS IAM page in the AWS Console
-        1. Search for the AWS Amplify Service Role name (It's part of the ARN)
-        1. Add a role policy with the follwing statement. You can find the Arn of your user pool by searching for "UserPool" in the "Deployed backend resources" section of the Amplify branch deployments, and clicking on the link to the user pool.
+        1. On the App's Amplify page, navigate to "App settings -> Genral Settings" and look for the Service Role arn.
+        1. Navigate to the AWS IAM page in the AWS Console.
+        1. Search for the AWS Amplify Service Role name (It's part of the arn).
+        1. Add a role policy with the follwing statement. You can find the arn of your user pool by searching for "UserPool" in the "Deployed backend resources" section of the Amplify branch deployments, and clicking on the link to the user pool.
         ```json
         {
             "Version": "2012-10-17",
