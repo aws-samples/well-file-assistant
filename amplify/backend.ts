@@ -16,13 +16,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { CfnApplication } from 'aws-cdk-lib/aws-sam';
 
-import { join } from 'path';
-
 //These are for testing
 import { AwsSolutionsChecks } from 'cdk-nag'
 import { NagSuppressions } from 'cdk-nag'
 import { Aspects } from 'aws-cdk-lib';
-
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -33,10 +30,6 @@ const tags = {
   Project: 'well-file-assistant',
   Environment: 'dev',
 }
-
-// const authBackend = defineBackend({
-//   auth
-// })
 
 const backend = defineBackend({
   auth,
@@ -52,8 +45,6 @@ backend.addOutput({
     pre_sign_up_handler_lambda_arn: backend.preSignUp.resources.lambda.functionArn
   }
 })
-
-// const customBackendAssets = defineBackend({});
 
 function applyTagsToRootStack(stack: cdk.Stack) {
   const rootStack = cdk.Stack.of(customStack).nestedStackParent
@@ -158,7 +149,7 @@ const queryReportImageLambda = new NodejsFunction(customStack, 'QueryReportImage
     loader: {
       '.node': 'file',
     },
-    inject: [join(__dirname, 'functions', 'shims.js')],
+    // inject: [join(__dirname, 'functions', 'shims.js')],
     bundleAwsSDK: true,
     minify: true,
     sourceMap: true,

@@ -1,6 +1,0 @@
-PyMuPDF
-langchain
-langchain-aws
-#pydantic
-#pydantic_core
-jsonschema
