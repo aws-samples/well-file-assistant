@@ -91,9 +91,9 @@ function getLangChainMessageContent(message: HumanMessage | AIMessage | ToolMess
         messageContent += (message.content[0] as MessageContentText).text
     }
 
-    if (message instanceof AIMessage && message.tool_calls && message.tool_calls.length > 0) {
-        messageContent += `\n\nTool calls: \n${JSON.stringify(message.tool_calls.map((toolCall) => toolCall.args), null, 2)}`;
-    }
+    // if (message instanceof AIMessage && message.tool_calls && message.tool_calls.length > 0) {
+    //     messageContent += `\n\nTool calls: \n${JSON.stringify(message.tool_calls.map((toolCall) => toolCall.args), null, 2)}`;
+    // }
 
     return messageContent
 

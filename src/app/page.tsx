@@ -18,10 +18,14 @@ export default function Home() {
             Example:
           </Typography>
           <Typography variant="body1">
-            &quot;I&apos;m making a well history for well 30-039-07715. The history will show operational events in the well&apos;s past like when it was drilled, completed and worked over. Make a table showing the type of operation, text from the report describing operational details, and document title. Ignore events involving cathodic protection, certificates or changes in transporter.&quot;
+            &quot;I&apos;m making an operational history for a well with API number 30-039-07715. Make a table showing the type of operation, text from the report describing operational details, and document title.&quot;
           </Typography>
         </CardContent>
       </Card>
+      <pre>
+        {JSON.stringify({one: 1, two: 2, three: {four: 4}}, null, 2)}
+      </pre>
+
     </Box>
   );
 }

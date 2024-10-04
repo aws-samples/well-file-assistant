@@ -72,7 +72,7 @@ async function setPreSignupTrigger(
                 "To set the pre-signup trigger, you need the following AWS IAM policy:"
             );
             console.log(
-                {
+                `{
                     "Version": "2012-10-17",
                     "Statement": [
                         {
@@ -81,10 +81,10 @@ async function setPreSignupTrigger(
                                 "cognito-idp:DescribeUserPool",
                                 "cognito-idp:UpdateUserPool"
                             ],
-                            "Resource": [`arn:aws:cognito-idp:${region}:${awsAccount}:userpool/${userPoolId}`]
+                            "Resource": ["arn:aws:cognito-idp:${region}:${awsAccount}:userpool/${userPoolId}"]
                         }
                     ]
-                }
+                }`
             );
         }
 

@@ -103,13 +103,20 @@ export default function ChatUIMessage(props: ChatUIMessageProps) {
                   // console.log("relevanceScore <td> value:", relevanceScoreTdValue); // This will log the value
 
                   //Hide rows with a low relevanceScore
-                  if ( hideRows && parseInt(relevanceScoreTdValue) < 6) return <tr className={styles.hiddenRow} {...props} />
+                  if (hideRows && parseInt(relevanceScoreTdValue) < 6) return <tr className={styles.hiddenRow} {...props} />
                   else return <tr {...props} />
                 },
               }}
             >
               {props.message.content}
             </ReactMarkdown>
+            {props.message.tool_calls && typeof props.message.tool_calls === 'string' && JSON.parse(props.message.tool_calls).length > 0 ? (
+              <div>
+                <strong>Tool Calls:</strong>
+                <pre>{JSON.stringify(JSON.parse(props.message.tool_calls), null, 2)}</pre>
+              </div>
+            ) : null
+            }
           </>
         </Container>
       )}
