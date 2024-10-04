@@ -4,13 +4,12 @@ import {
   Container,
   Popover,
   Spinner,
-  StatusIndicator,
-  TextContent,
+  StatusIndicator
 } from "@cloudscape-design/components";
-// import { format, parseISO } from 'date-fns';
+
 import remarkGfm from "remark-gfm";
 import ReactMarkdown from "react-markdown";
-// import { ChatMessage, ChatMessageType } from "./types";
+
 import type { Schema } from '@/../amplify/data/resource';
 import { formatDate } from "@/utils/date-utils";
 
@@ -24,6 +23,8 @@ export interface ChatUIMessageProps {
 
 export default function ChatUIMessage(props: ChatUIMessageProps) {
   const [hideRows, setHideRows] = useState<boolean>(true)
+  if (!props.message.createdAt) throw new Error("Message createdAt missing");
+
   return (
     <div>
       {props.message?.role != 'human' && (
@@ -102,52 +103,20 @@ export default function ChatUIMessage(props: ChatUIMessageProps) {
                   // console.log("relevanceScore <td> value:", relevanceScoreTdValue); // This will log the value
 
                   //Hide rows with a low relevanceScore
-                  if ( hideRows && parseInt(relevanceScoreTdValue) < 6) return <tr className={styles.hiddenRow} {...props} />
+                  if (hideRows && parseInt(relevanceScoreTdValue) < 6) return <tr className={styles.hiddenRow} {...props} />
                   else return <tr {...props} />
                 },
               }}
             >
               {props.message.content}
             </ReactMarkdown>
-
-            {/* <ReactMarkdown
-              children={props.message.content}
-              remarkPlugins={[remarkGfm]}
-              components={{
-                pre(props) {
-                  const { children, ...rest } = props;
-                  return (
-                    <pre {...rest} className={styles.codeMarkdown}>
-                      {children}
-                    </pre>
-                  );
-                },
-                table(props) {
-                  const { children, ...rest } = props;
-                  return (
-                    <table {...rest} className={styles.markdownTable}>
-                      {children}
-                    </table>
-                  );
-                },
-                th(props) {
-                  const { children, ...rest } = props;
-                  return (
-                    <th {...rest} className={styles.markdownTableCell}>
-                      {children}
-                    </th>
-                  );
-                },
-                td(props) {
-                  const { children, ...rest } = props;
-                  return (
-                    <td {...rest} className={styles.markdownTableCell}>
-                      {children}
-                    </td>
-                  );
-                },
-              }}
-            /> */}
+            {props.message.tool_calls && typeof props.message.tool_calls === 'string' && JSON.parse(props.message.tool_calls).length > 0 ? (
+              <div>
+                <strong>Tool Calls:</strong>
+                <pre>{JSON.stringify(JSON.parse(props.message.tool_calls), null, 2)}</pre>
+              </div>
+            ) : null
+            }
           </>
         </Container>
       )}
@@ -158,9 +127,6 @@ export default function ChatUIMessage(props: ChatUIMessageProps) {
             {props.message.content}
           </ReactMarkdown>
         </>
-        // <TextContent>
-        //   <strong>{props.message.content}</strong>
-        // </TextContent>
       )}
     </div>
   );

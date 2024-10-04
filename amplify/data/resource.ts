@@ -32,23 +32,19 @@ const schema = a.schema({
       chatSessionId: a.id(),
       session: a.belongsTo("ChatSession","chatSessionId"),
       content: a.string().required(),
-      // role: a.string(),
       role: a.enum(["human", "ai", "tool"]),
       owner: a.string(),
-      // createdAt: a.datetime().required(),
+      createdAt: a.datetime(),
       tool_call_id: a.string(), //This is the langchain tool call id
       tool_name: a.string(),
-      // tool_calls: a.array(a.customType({
-      //   id: a.string()
-      // }))
       tool_calls: a.json()
       // tool_calls: a.list(a.customType({
       //   id: a.string()
       // }))
     })
-    // .secondaryIndexes((index) => [
-    //   index("chatSessionId").sortKeys(["createdAt"])
-    // ])
+    .secondaryIndexes((index) => [
+      index("chatSessionId").sortKeys(["createdAt"])
+    ])
     .authorization((allow) => [allow.owner(), allow.authenticated()]),
 
   getChatResponse: a
@@ -73,7 +69,6 @@ const schema = a.schema({
       s3Key: a.string().required(), 
       tablePurpose: a.string().required(),
       tableColumns: a.json().required(),
-      // Can not have custom types in arguments as of 2024-09-25
   })
     .returns(a.json())
     // .handler(a.handler.function(getInfoFromPdf))

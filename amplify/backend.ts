@@ -1,10 +1,12 @@
 import { defineBackend } from '@aws-amplify/backend';
-import { auth } from './auth/resource.js';
-import { data, getChatResponesHandler, getInfoFromPdf} from './data/resource.js';
-import { storage } from './storage/resource.js';
+import { auth } from './auth/resource';
+import { data, getChatResponesHandler, getInfoFromPdf } from './data/resource';
+import { preSignUp } from './functions/preSignUp/resource';
+import { storage } from './storage/resource';
 import * as cdk from 'aws-cdk-lib'
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
 import * as sfnTasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import * as logs from 'aws-cdk-lib/aws-logs';
@@ -12,8 +14,7 @@ import * as s3Deployment from 'aws-cdk-lib/aws-s3-deployment';
 import * as appSync from 'aws-cdk-lib/aws-appsync';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { CfnApplication, CfnFunction } from 'aws-cdk-lib/aws-sam';
-// import * as shims from './functions/shims.js'
+import { CfnApplication } from 'aws-cdk-lib/aws-sam';
 
 import { join } from 'path';
 
@@ -21,7 +22,7 @@ import { join } from 'path';
 import { AwsSolutionsChecks } from 'cdk-nag'
 import { NagSuppressions } from 'cdk-nag'
 import { Aspects } from 'aws-cdk-lib';
-import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
+
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -33,13 +34,37 @@ const tags = {
   Environment: 'dev',
 }
 
+// const authBackend = defineBackend({
+//   auth
+// })
+
 const backend = defineBackend({
   auth,
   data,
   storage,
   getChatResponesHandler,
-  getInfoFromPdf
+  getInfoFromPdf,
+  preSignUp
 });
+
+backend.addOutput({
+  custom: {
+    pre_sign_up_handler_lambda_arn: backend.preSignUp.resources.lambda.functionArn
+  }
+})
+
+// const customBackendAssets = defineBackend({});
+
+function applyTagsToRootStack(stack: cdk.Stack) {
+  const rootStack = cdk.Stack.of(customStack).nestedStackParent
+  if (!rootStack) throw new Error('Root stack not found')
+  //Apply tags to all the nested stacks
+  Object.entries(tags).map(([key, value]) => {
+    cdk.Tags.of(rootStack).add(key, value)
+  })
+  cdk.Tags.of(rootStack).add('rootStackName', rootStack.stackName)
+}
+
 
 //Don't allow unauthenticated identites in the cognito identity pool
 const { cfnIdentityPool, cfnUserPool } = backend.auth.resources.cfnResources;
@@ -48,20 +73,29 @@ cfnIdentityPool.allowUnauthenticatedIdentities = false;
 const dataBucketName = backend.storage.resources.bucket.bucketName
 
 const customStack = backend.createStack('customStack')
+applyTagsToRootStack(customStack)
 
-// This block applies tags to all resources created in this app
+// // This block applies tags to all resources created in this app
 const rootStack = cdk.Stack.of(customStack).nestedStackParent
 if (!rootStack) throw new Error('Root stack not found')
-//Apply tags to all the nested stacks
-Object.entries(tags).map(([key, value]) => {
-  cdk.Tags.of(rootStack).add(key, value)
-})
-//Tag all resources with the root stack name
-cdk.Tags.of(rootStack).add('rootStackName', rootStack.stackName)
+
+// Create an SSM parameter
+const ssmParameter = new cdk.aws_ssm.StringParameter(customStack, 'AllowedEmailDomainList', {
+  parameterName: `/well-file-assistant/${rootStack.stackName}/allowed-email-domain-list`,
+  stringValue: 'amazon.com,exampleDomainName.com',
+});
+
+
+// Grant the user pool permission to invoke the Lambda function
+backend.preSignUp.resources.lambda.addPermission('UserPoolInvoke', {
+  principal: new iam.ServicePrincipal('cognito-idp.amazonaws.com'),
+  action: 'lambda:InvokeFunction',
+  sourceArn: backend.auth.resources.cfnResources.cfnUserPool.attrArn,
+});
 
 //Deploy the test data to the s3 bucket
 const wellFileDeployment = new s3Deployment.BucketDeployment(customStack, 'test-file-deployment', {
-  sources: [s3Deployment.Source.asset(path.join(rootDir, 'test-data'))],
+  sources: [s3Deployment.Source.asset(path.join(rootDir, 'testData'))],
   destinationBucket: backend.storage.resources.bucket,
   destinationKeyPrefix: 'well-files/'
 });
@@ -112,16 +146,13 @@ const ghostScriptLayerStack = new CfnApplication(customStack, 'GhostScriptLambda
     semanticVersion: '9.27.0',
   },
 });
-
 const ghostScriptLayerArn = ghostScriptLayerStack.getAtt('Outputs.LayerVersion').toString()
 const ghostScriptLayer = lambda.LayerVersion.fromLayerVersionArn(customStack, 'GhostScriptLayerVersion', ghostScriptLayerArn)
 
-//https://github.com/aws-amplify/amplify-backend/blob/d8692b0c96584fb699e892183ae68fe302740680/packages/backend-function/src/factory.ts#L368
-
-
+// How AWS Amplify creates lambda functions: https://github.com/aws-amplify/amplify-backend/blob/d8692b0c96584fb699e892183ae68fe302740680/packages/backend-function/src/factory.ts#L368
 const queryReportImageLambda = new NodejsFunction(customStack, 'QueryReportImagesTs', {
   runtime: lambda.Runtime.NODEJS_20_X,
-  entry: path.join(__dirname, 'functions', 'getInfoFromPdf','index.ts'),
+  entry: path.join(__dirname, 'functions', 'getInfoFromPdf', 'index.ts'),
   bundling: {
     format: OutputFormat.CJS,
     loader: {
@@ -139,60 +170,9 @@ const queryReportImageLambda = new NodejsFunction(customStack, 'QueryReportImage
     'DATA_BUCKET_NAME': dataBucketName,
     // 'MODEL_ID': 'anthropic.claude-3-sonnet-20240229-v1:0',
     'MODEL_ID': 'anthropic.claude-3-haiku-20240307-v1:0',
-    // 'MAX_TOKENS': '4096'
   },
   layers: [imageMagickLayer, ghostScriptLayer]
 });
-
-
-
-// const queryReportImageLambdaPy = new lambda.DockerImageFunction(customStack, 'QueryReportImagesPy', {
-//   code: lambda.DockerImageCode.fromImageAsset(path.join(
-//       __dirname, 'functions', 'getInfoFromPdfPy'
-//   )),
-//   timeout: cdk.Duration.minutes(15),
-//   memorySize: 3000,
-//   role: queryReportsLambdaRole,
-//   environment: {
-//       'DATA_BUCKET_NAME': dataBucketName,
-//       // 'MODEL_ID': 'anthropic.claude-3-sonnet-20240229-v1:0',
-//       'MODEL_ID': 'anthropic.claude-3-haiku-20240307-v1:0',
-//       'MAX_TOKENS': '4096'
-//   }
-// });
-
-// const queryReportImageLambdaPy = new lambda.Function(customStack, "QueryReportImagesPy1", {
-//   runtime: lambda.Runtime.PYTHON_3_10,
-//   handler: "index.handler",
-//   code: lambda.Code.fromAsset(path.join(__dirname, 'functions', 'getInfoFromPdfPy'), {
-//     bundling: {
-//       image: lambda.Runtime.PYTHON_3_10.bundlingImage,
-//       command: [
-//         "bash", "-c", "pip install -r requirements.txt -t /asset-output && cp -au . /asset-output"
-//       ]
-//     }
-//   }),
-//   architecture: lambda.Architecture.ARM_64,
-//   timeout: cdk.Duration.seconds(300),
-//   environment: {
-//     'DATA_BUCKET_NAME': dataBucketName,
-//     'MODEL_ID': 'anthropic.claude-3-haiku-20240307-v1:0',
-//   },
-//   role: queryReportsLambdaRole
-// })
-
-// const queryReportImageLambdaPy = new CfnFunction(customStack, "QueryReportImagesPy1", {
-//   handler: "index.handler",
-//   runtime: lambda.Runtime.PYTHON_3_12.name,
-//   architectures: [lambda.Architecture.ARM_64.name],
-//   codeUri: path.join(__dirname, 'functions', 'getInfoFromPdfPy'),
-//   // environment: 
-//   //   Variables:{
-//   //   'DATA_BUCKET_NAME': dataBucketName,
-//   //   'MODEL_ID': 'anthropic.claude-3-haiku-20240307-v1:0',
-//   // },
-//   // role: queryReportsLambdaRole
-// })
 
 // Create a Step Functions state machine
 const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportImagesStateMachine2', {
@@ -234,24 +214,15 @@ const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportIm
               "tablePurpose.$": "$$.Execution.Input.tablePurpose",
               "tableColumns.$": "$$.Execution.Input.tableColumns",
               "s3Key.$": "$$.Map.Item.Value.Key",
-              // "testArg": backend.data.graphqlUrl
             }
           },
-          // itemSelector: {
-          //   "tablePurpose.$": "$$.Execution.Input.tablePurpose",
-          //   "tableColumns.$": "$$.Execution.Input.tableColumns",
-          //   "s3Key.$": "$$.Map.Item.Value.Key"
-          // },
         })
           .itemProcessor(new sfnTasks.LambdaInvoke(
             customStack, 'ProcessS3Object', {
             lambdaFunction: queryReportImageLambda,
-            // lambdaFunction: backend.getInfoFromPdf.resources.lambda,
             payloadResponseOnly: true,
-            // payload: {}
-            
           }).addRetry({
-            maxAttempts: 20, 
+            maxAttempts: 20,
             maxDelay: cdk.Duration.seconds(5),
             errors: [
               'ThrottlingException',
@@ -267,7 +238,7 @@ const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportIm
 });
 
 backend.getChatResponesHandler.addEnvironment('STEP_FUNCTION_ARN', queryImagesStateMachine.stateMachineArn)
-// backend.getInfoFromPdf.addEnvironment('DATA_BUCKET_NAME', dataBucketName)
+backend.preSignUp.addEnvironment('ALLOWED_EMAIL_DOMAINS_SSM_PARAMETER_NAME', ssmParameter.parameterName)
 
 backend.getChatResponesHandler.resources.lambda.addToRolePolicy(
   new iam.PolicyStatement({
@@ -302,6 +273,20 @@ backend.getInfoFromPdf.resources.lambda.addToRolePolicy(
     resources: [
       `arn:aws:s3:::${dataBucketName}/*`
     ],
+  })
+)
+
+backend.preSignUp.resources.lambda.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: ["ssm:GetParameter"],
+    resources: [ssmParameter.parameterArn],
+  })
+)
+
+backend.preSignUp.resources.lambda.addToRolePolicy(
+  new iam.PolicyStatement({
+    actions: ["cognito-idp:DescribeUserPool"],
+    resources: [backend.auth.resources.userPool.userPoolArn],
   })
 )
 

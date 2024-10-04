@@ -21,7 +21,10 @@ const combineAndSortMessages = ((arr1: Array<Schema["ChatMessage"]["type"]>, arr
     const uniqueMessages = combinedMessages.filter((message, index, self) =>
         index === self.findIndex((p) => p.id === message.id)
     );
-    return uniqueMessages.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return uniqueMessages.sort((a, b) => {
+        if (!a.createdAt || !b.createdAt) throw new Error("createdAt is missing")
+        return a.createdAt.localeCompare(b.createdAt)
+    });
 })
 
 function Page({ params }: { params?: { chatSessionId: string } }) {
@@ -257,7 +260,10 @@ function Page({ params }: { params?: { chatSessionId: string } }) {
                     <ul>
                         {chatSessions
                             .slice()
-                            .sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)
+                            .sort((a, b) => {
+                                if (!a.createdAt || !b.createdAt) throw new Error("createdAt is missing")
+                                return a.createdAt < b.createdAt ? 1 : -1
+                            })
                             .map((session) => (
                                 <li key={session.id}>
                                     

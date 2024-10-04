@@ -8,7 +8,7 @@ import { HumanMessage, AIMessage, ToolMessage, BaseMessage, MessageContentText }
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 
 import * as APITypes from "../graphql/API";
-import { listChatMessages } from "../graphql/queries"
+import { listChatMessageByChatSessionIdAndCreatedAt } from "../graphql/queries"
 import { calculatorTool, wellTableTool } from './toolBox';
 
 Amplify.configure(
@@ -70,7 +70,7 @@ const createChatMessage = /* GraphQL */ `mutation CreateChatMessage(
   ` as GeneratedMutation<
     APITypes.CreateChatMessageMutationVariables,
     APITypes.CreateChatMessageMutation
-  >;
+>;
 
 
 function getLangChainMessageContent(message: HumanMessage | AIMessage | ToolMessage): string | void {
@@ -91,9 +91,9 @@ function getLangChainMessageContent(message: HumanMessage | AIMessage | ToolMess
         messageContent += (message.content[0] as MessageContentText).text
     }
 
-    if (message instanceof AIMessage && message.tool_calls && message.tool_calls.length > 0) {
-        messageContent += `\n\nTool calls: \n${JSON.stringify(message.tool_calls.map((toolCall) => toolCall.args), null, 2)}`;
-    }
+    // if (message instanceof AIMessage && message.tool_calls && message.tool_calls.length > 0) {
+    //     messageContent += `\n\nTool calls: \n${JSON.stringify(message.tool_calls.map((toolCall) => toolCall.args), null, 2)}`;
+    // }
 
     return messageContent
 
@@ -146,80 +146,85 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
     if (!event.identity) throw new Error("Event does not contain identity");
     if (!('sub' in event.identity)) throw new Error("Event does not contain user");
 
-    // Get the chat messages from the chat session
-    const chatSessionMessages = await amplifyClient.graphql({
-        query: listChatMessages,
-        variables: {
-            limit: 1000, //TODO, impliment sorting so you can only get the last 10 messages
-            filter: {
-                chatSessionId: {
-                    eq: event.arguments.chatSessionId
-                }
+    try {
+
+        // Get the chat messages from the chat session
+        const chatSessionMessages = await amplifyClient.graphql({ //listChatMessageByChatSessionIdAndCreatedAt
+            query: listChatMessageByChatSessionIdAndCreatedAt,
+            variables: {
+                limit: 20,
+                chatSessionId: event.arguments.chatSessionId,
+                sortDirection: APITypes.ModelSortDirection.DESC
+            }
+        })
+
+        console.log('messages from gql query: ', chatSessionMessages)
+
+        const sortedMessages = chatSessionMessages.data.listChatMessageByChatSessionIdAndCreatedAt.items.reverse()
+
+        // Remove all of the messages before the first message with the role of human
+        const firstHumanMessageIndex = sortedMessages.findIndex((message) => message.role === 'human');
+        const sortedMessagesStartingWithHumanMessage = sortedMessages.slice(firstHumanMessageIndex)
+
+        //Here we're using the last 10 messages for memory
+        const messages: BaseMessage[] = sortedMessagesStartingWithHumanMessage.map((message) => {
+            if (message.role === 'human') {
+                return new HumanMessage({
+                    content: message.content,
+                })
+            } else if (message.role === 'ai') {
+                return new AIMessage({
+                    content: [{
+                        type: 'text',
+                        text: message.content
+                    }],
+                    tool_calls: JSON.parse(message.tool_calls || '[]')
+                })
+            } else {
+                return new ToolMessage({
+                    content: message.content,
+                    tool_call_id: message.tool_call_id || "",
+                    name: message.tool_name || ""
+                })
+            }
+        })
+
+        console.log("mesages in langchain form: ", messages)
+
+        const agentModel = new ChatBedrockConverse({
+            model: process.env.MODEL_ID,
+            temperature: 0
+        });
+
+        const agent = createReactAgent({
+            llm: agentModel,
+            tools: agentTools,
+        });
+
+        const input = {
+            messages: messages,
+        }
+
+        for await (
+            const chunk of await agent.stream(input, {
+                streamMode: "values",
+            })
+        ) {
+            const newMessage: BaseMessage = chunk.messages[chunk.messages.length - 1];
+
+            if (!(newMessage instanceof HumanMessage)) {
+                await publishMessage(event.arguments.chatSessionId, event.identity.sub, newMessage)
             }
         }
-    })
+        return "Invocation Successful!";
 
-    //Sort the chatSessionMessages by createdAt time
-    const sortedMessages = chatSessionMessages.data.listChatMessages.items
-        .sort((a: { createdAt: string; }, b: { createdAt: any; }) => a.createdAt.localeCompare(b.createdAt))
-        .slice(-20);
+    } catch (error) {
 
-    //Remove all of the messages before the first message with the role of human
-    const firstHumanMessageIndex = sortedMessages.findIndex((message) => message.role === 'human');
-    const sortedMessagesStartingWithHumanMessage = sortedMessages.slice(firstHumanMessageIndex)
-
-    console.log('messages from gql query: ', sortedMessagesStartingWithHumanMessage)
-
-    //Here we're using the last 10 messages for memory
-    const messages: BaseMessage[] = sortedMessagesStartingWithHumanMessage.map((message) => {
-        if (message.role === 'human') {
-            return new HumanMessage({
-                content: message.content,
-            })
-        } else if (message.role === 'ai') {
-            return new AIMessage({
-                content: [{
-                    type: 'text',
-                    text: message.content
-                }],
-                tool_calls: JSON.parse(message.tool_calls || '[]')
-            })
-        } else {
-            return new ToolMessage({
-                content: message.content,
-                tool_call_id: message.tool_call_id || "",
-                name: message.tool_name || ""
-            })
+        if (error instanceof Error) {
+            const AIErrorMessage = new AIMessage({ content: error.message + `\n model id: ${process.env.MODEL_ID}` })
+            await publishMessage(event.arguments.chatSessionId, event.identity.sub, AIErrorMessage)
         }
-    })
-
-    console.log("mesages in langchain form: ", messages)
-
-    const agentModel = new ChatBedrockConverse({
-        model: process.env.MODEL_ID,
-        temperature: 0
-    });
-
-    const agent = createReactAgent({
-        llm: agentModel,
-        tools: agentTools,
-    });
-
-    const input = {
-        messages: messages,
+        return "Error"
     }
 
-    for await (
-        const chunk of await agent.stream(input, {
-            streamMode: "values",
-        })
-    ) {
-        const newMessage: BaseMessage = chunk.messages[chunk.messages.length - 1];
-
-        if (!(newMessage instanceof HumanMessage)) {
-            await publishMessage(event.arguments.chatSessionId, event.identity.sub, newMessage)
-        }
-    }
-
-    return "Invocation Successful!";
 };
