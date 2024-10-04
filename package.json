@@ -29,7 +29,7 @@
     "isomorphic-dompurify": "^2.16.0",
     "jsonschema": "^1.4.1",
     "langchain": "^0.2.12",
-    "next": "14.2.6",
+    "next": "14.2.10",
     "pdf-img-convert": "^1.2.1",
     "pdf-lib": "^1.17.1",
     "pdf-to-png-converter": "^3.3.0",
