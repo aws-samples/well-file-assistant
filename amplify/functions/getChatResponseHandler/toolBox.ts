@@ -35,7 +35,7 @@ export const calculatorTool = tool(
 
 const wellTableSchema = z.object({
     tablePurpose: z.string().describe("The purpose for which the user is making this table"),
-    // dataToExclude: z.string().describe("List of criteria to exclude data from the table"),
+    dataToExclude: z.string().describe("List of criteria to exclude data from the table"),
     tableColumns: z.array(z.object({
         columnName: z.string().describe('The name of a column'),
         columnDescription: z.string().describe('A description of the information which this column contains. Be sure never to use the " character'),
@@ -44,22 +44,23 @@ const wellTableSchema = z.object({
 });
 
 export const wellTableTool = tool(
-    async ({ tablePurpose, tableColumns, wellApiNumber }) => {
+    async ({ tablePurpose, tableColumns, wellApiNumber, dataToExclude }) => {
         const sfnClient = new SFNClient({
             region: process.env.AWS_REGION,
             maxAttempts: 3,
         });
 
-        // Here add in the default table column date
+        // Here add in the default table columns date and excludeRow
         tableColumns.unshift({
             columnName: 'date', columnDescription: `The date of the event in YYYY-MM-DD format.`
         })
 
-        // tableColumns.push({
-        //     columnName: 'excludedPhrases', columnDescription: `
-        //     Write a list of line numbers where one of the following is mentioned: ${dataToExclude}
-        //     `
-        // })
+        tableColumns.push({
+            columnName: 'excludeRow', columnDescription: `
+            Does this file contain any of the criteria below? 
+            ${dataToExclude}
+            `
+        })
 
         console.log('Table Columns: ', JSON.stringify(tableColumns))
 
@@ -70,7 +71,6 @@ export const wellTableTool = tool(
         const command = new StartSyncExecutionCommand({
             stateMachineArn: env.STEP_FUNCTION_ARN,
             input: JSON.stringify({
-                // prompt: { tablePurpose: tablePurpose, dataToExclude: dataToExclude,tableColumns: tableColumns },
                 tablePurpose: tablePurpose,
                 tableColumns: tableColumns,
                 s3Prefix: s3Prefix

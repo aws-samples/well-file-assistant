@@ -29,7 +29,7 @@ const event: AppSyncResolverEvent<Schema['getInfoFromPdf']['args']> = {
         "columnDescription": "The title of the document describing the operation details"
       },
       {
-        "columnName": "containsSpecificOperations",
+        "columnName": "excludeRow",
         "columnDescription": `
             Is the document about any of these: cathodic protection, changes in transporter, certificate 
             `
@@ -50,8 +50,8 @@ const event: AppSyncResolverEvent<Schema['getInfoFromPdf']['args']> = {
         // If not, assign higher scores for documents more relevant to the objective: "Generate a well history showing operational events?".
       }
     ],
-    s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00114.pdf" // Change in Transporter
-    // s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/3003907715_24_wf_1.pdf" // Cathodic Protection
+    // s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00114.pdf" // Change in Transporter
+    s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/3003907715_24_wf_1.pdf" // Cathodic Protection
     // s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00112.pdf" //Drill Report
   },
   source: null,

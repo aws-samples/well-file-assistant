@@ -149,7 +149,12 @@ function Page() {
               <tr key={index}>
                 <td>{displayFolderOrObject({ item })}</td>
                 <td>{item.Size}</td>
-                <td><button onClick={() => onRemoveObject(item.Key)}>Remove File</button></td>
+                <td>
+                  {!item.IsFolder ? 
+                  <button onClick={() => onRemoveObject(item.Key)}>Remove File</button>
+                  : ""}
+                  
+                </td>
               </tr>
             ))}
           </tbody>

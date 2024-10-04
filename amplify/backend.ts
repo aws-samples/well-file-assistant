@@ -166,7 +166,7 @@ const queryReportImageLambda = new NodejsFunction(customStack, 'QueryReportImage
 });
 
 // Create a Step Functions state machine
-const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportImagesStateMachine2', {
+const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportImagesStateMachine', {
   timeout: cdk.Duration.minutes(15),
   stateMachineType: sfn.StateMachineType.EXPRESS,
   logs: {
