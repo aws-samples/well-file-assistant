@@ -1,10 +1,20 @@
 # Well File Assistant - PDF Information Retrieval with Generative AI
 
-Petroleum engineers face a daunting task when preparing for operations on a well. They must sift through massive collections of documents, any of which could contain a critial piece of information. This labor-intensive and time-consuming process requires engineers to manually read and analyze hundreds of pages of technical reports, historical data, and regulatory documents for every well they work on. The sheer volume of information can lead to fatigue, overlooked details, and potential human error, which impact project's safety and efficiency. 
+### The Challenge
 
-Allow engineers to focus on decision-making and problem-solving by leveraging the power of Generative AI for document analysis. This technology revolutionizes the way engineers interact with vast amounts of technical documentation. By employing advanced natural language processing and machine learning algorithms, Generative AI can rapidly scan, comprehend, and synthesize information from thousands of pages in seconds. This not only saves countless hours of manual labor but also significantly reduces the risk of human error and oversight.
+Petroleum engineers face a daunting task when preparing for well operations. They must sift through massive collections of documents, any of which could contain critical information. This labor-intensive and time-consuming process requires engineers to manually read and analyze hundreds of pages of technical reports, historical data, and regulatory documents for every well they work on.
 
-This repository contains a tool for retrieving information from multiple PDF files using a chat interface powered by generative AI. It's designed to help engineers quickly find and extract relevant information from large collections of PDF documents.
+The sheer volume of information can lead to fatigue, overlooked details, and potential human error, which impact project safety and efficiency.
+
+### The Solution
+
+To address that challenge, we've developed a tool which leverages the power of Generative AI for document analysis. This technology revolutionizes the way engineers interact with vast amounts of technical documentation.
+
+By employing advanced natural language processing and machine learning algorithms, Generative AI can rapidly scan, comprehend, and synthesize information from thousands of pages in seconds. This not only saves countless hours of manual labor but also significantly reduces the risk of human error and oversight, allowing engineers to focus on decision-making and problem-solving.
+
+### About This Repository
+
+This repository contains a tool for retrieving information from multiple PDF files using a chat interface powered by generative AI. It's designed to help engineers quickly find and extract relevant information from large collections of PDF documents, streamlining their workflow and enhancing operational efficiency.
 
 ## Features
 
@@ -52,7 +62,7 @@ Deploy this app using AWS Amplify.
         1. Update the parameter value with a list of allowed email domains. Use a comma to seperate domains: Ex: "amazon.com" or "gmail.com,amazon.com"
 
 
-## Usage
+## App Usage
 1. Navigate to the app's domain. You can find the domain by opening the app in the AWS Amplify console.
 1. Create a new user by clicking "Log in / Sign up" button on the right side of the top banner. You'll enter an email address and password.
 1. Click the "Chat" button in the top banner to reach the chat interface. Try this example prompt:
