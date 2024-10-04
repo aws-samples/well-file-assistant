@@ -1,11 +1,12 @@
 import { handler } from "@/../amplify/functions/getInfoFromPdf/index"
 import { AppSyncResolverEvent, Context } from 'aws-lambda';
 import { Schema } from '@/../amplify/data/resource';
+import outputs from '@/../amplify_outputs.json';
 
-process.env.AWS_DEFAULT_REGION = 'us-east-1'
+process.env.AWS_DEFAULT_REGION = outputs.auth.aws_region
 // process.env.MODEL_ID = 'anthropic.claude-3-sonnet-20240229-v1:0'
 process.env.MODEL_ID = 'anthropic.claude-3-haiku-20240307-v1:0'
-process.env.DATA_BUCKET_NAME = 'amplify-wellfileassistant-wellfiledrivebucketd67f9-mkppqhfnptzb'
+process.env.DATA_BUCKET_NAME = outputs.storage.bucket_name
 
 const event: AppSyncResolverEvent<Schema['getInfoFromPdf']['args']> = {
   arguments: {
