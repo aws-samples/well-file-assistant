@@ -10,7 +10,8 @@ import {
 async function setPreSignupTrigger(
     userPoolId: string,
     lambdaArn: string,
-    //   region: string
+    region: string,
+    awsAccount: string
 ) {
     // Create Cognito and Lambda clients
     const cognitoClient = new CognitoIdentityProviderClient();
@@ -64,6 +65,29 @@ async function setPreSignupTrigger(
         // console.log("Lambda permission added successfully");
     } catch (error) {
         console.error("Error setting pre-signup trigger:", error);
+
+        // If the error has type AccessDeniedException, print to the console the AWS IAM policy required to perform this action
+        if (error instanceof Error && error.name === "AccessDeniedException") {
+            console.log(
+                "To set the pre-signup trigger, you need the following AWS IAM policy:"
+            );
+            console.log(
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "cognito-idp:DescribeUserPool",
+                                "cognito-idp:UpdateUserPool"
+                            ],
+                            "Resource": [`arn:aws:cognito-idp:${region}:${awsAccount}:userpool/${userPoolId}`]
+                        }
+                    ]
+                }
+            );
+        }
+
         throw error;
     }
 }
@@ -71,7 +95,9 @@ async function setPreSignupTrigger(
 // Usage
 const userPoolId = outputs.auth.user_pool_id
 const lambdaArn = outputs.custom.pre_sign_up_handler_lambda_arn
+const region = outputs.auth.aws_region
+const awsAccount = lambdaArn.split(":")[4]
 
-setPreSignupTrigger(userPoolId, lambdaArn)
+setPreSignupTrigger(userPoolId, lambdaArn, region, awsAccount)
     .then(() => console.log("Process completed successfully"))
     .catch((error) => console.error("Process failed:", error));
