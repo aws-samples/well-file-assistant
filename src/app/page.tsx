@@ -22,10 +22,6 @@ export default function Home() {
           </Typography>
         </CardContent>
       </Card>
-      <pre>
-        {JSON.stringify({one: 1, two: 2, three: {four: 4}}, null, 2)}
-      </pre>
-
     </Box>
   );
 }
