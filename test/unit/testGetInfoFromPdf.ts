@@ -33,21 +33,6 @@ const event: AppSyncResolverEvent<Schema['getInfoFromPdf']['args']> = {
         "columnDescription": `
             Is the document about any of these: cathodic protection, changes in transporter, certificate 
             `
-        //Line numbers where any of these are mentioned: cathodic protection, changes in transporter, certificate 
-
-        // Write a list of line numbers where one of the following is mentioned: cathodic protection, changes in transporter
-
-        // Write a list of sentences from the report which mention one of the following: cathodic protection
-        // Only include text directly from the report.
-
-        // Write a list of line numbers where cathodic is mentioned.
-
-        // Start with a score of 5.
-        // Subtract 4 if the document contains any data about about: cathodic protection, changes in transporter.
-        // Add 3 if the document is meaningful to the table's purpose: "Generate a well history showing changes made to the wellbore"
-        //If not, assign a score of 8 for documents relevant to the objective: "Generate a well history showing operational events".
-        // Assign a score less than 3 if any image contains anything similar to: cathodic protection, certificates, changes in transporter.
-        // If not, assign higher scores for documents more relevant to the objective: "Generate a well history showing operational events?".
       }
     ],
     // s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00114.pdf" // Change in Transporter

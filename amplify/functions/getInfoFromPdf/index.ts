@@ -55,7 +55,7 @@ function createJsonSchema(columnList: Column[]): JsonSchema {
                 pattern: "^(?:\\d{4})-(?:(0[1-9]|1[0-2]))-(?:(0[1-9]|[12]\\d|3[01]))$", // This is a regex selector for a date in YYYY-MM-DD format
                 description: column.columnDescription // "The date of the operation in YYYY-MM-DD format"
             };
-        } else if (column.columnName === 'containsSpecificOperations') {
+        } else if (column.columnName === 'excludeRow') {
             fieldDefinitions[correctedColumnName] = {
                 type: 'boolean',
                 default: false,
