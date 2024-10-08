@@ -1,9 +1,9 @@
 version: 1
 backend:
   phases:
-    install:
-      runtime-versions:
-        nodejs: 20
+    # install:
+    #   runtime-versions:
+    #     nodejs: 20
     build:
       commands:
         - echo "Build environment is $CODEBUILD_BUILD_IMAGE"
@@ -24,6 +24,3 @@ frontend:
       - .next/cache/**/*
       - .npm/**/*
       - node_modules/**/*
-# env:
-#   variables:
-#     privilegedMode: true

@@ -58,7 +58,7 @@ function createJsonSchema(columnList: Column[]): JsonSchema {
         } else if (column.columnName === 'excludeRow') {
             fieldDefinitions[correctedColumnName] = {
                 type: 'boolean',
-                default: false,
+                default: true,
                 description: column.columnDescription
             };
             // fieldDefinitions[correctedColumnName] = {

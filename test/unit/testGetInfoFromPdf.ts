@@ -31,13 +31,15 @@ const event: AppSyncResolverEvent<Schema['getInfoFromPdf']['args']> = {
       {
         "columnName": "excludeRow",
         "columnDescription": `
-            Is the document about any of these: cathodic protection, changes in transporter, certificate 
+            Does this document contain one of the following phrases?
+            changes in transporter, certificate
             `
+            //changes in transporter, certificate 
       }
     ],
     // s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00114.pdf" // Change in Transporter
-    s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/3003907715_24_wf_1.pdf" // Cathodic Protection
-    // s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00112.pdf" //Drill Report
+    // s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/3003907715_24_wf_1.pdf" // Cathodic Protection
+    s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00112.pdf" //Drill Report
   },
   source: null,
   request: {
