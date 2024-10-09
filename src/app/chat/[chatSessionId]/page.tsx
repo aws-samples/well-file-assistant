@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 
 import { formatDate } from "@/utils/date-utils";
 
-import SideNavigation from "@cloudscape-design/components/side-navigation";
+// import SideNavigation from "@cloudscape-design/components/side-navigation";
 
 import styles from './page.module.css'
 import '@aws-amplify/ui-react/styles.css'
@@ -85,7 +85,12 @@ function Page({ params }: { params?: { chatSessionId: string } }) {
                 }
             }).subscribe({
                 next: ({ items, isSynced }) => {
-                    if (isSynced && items[items.length] && items[items.length].role === "ai") setIsLoading(false)
+                    if (
+                        isSynced && 
+                        items[items.length] && 
+                        items[items.length].role === "ai" && 
+                        items[items.length].tool_calls === "[]"
+                    ) setIsLoading(false)
 
 
                     setMessages((prevMessages) => combineAndSortMessages(prevMessages, items))
