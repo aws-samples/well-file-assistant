@@ -5,8 +5,8 @@ export const getChatResponesHandler = defineFunction({
   entry: '../functions/getChatResponseHandler/index.ts',
   timeoutSeconds: 900,
   environment: {
-    MODEL_ID: 'anthropic.claude-3-5-sonnet-20240620-v1:0'
-    // MODEL_ID: 'anthropic.claude-3-sonnet-20240229-v1:0'
+    // MODEL_ID: 'anthropic.claude-3-5-sonnet-20240620-v1:0'
+    MODEL_ID: 'anthropic.claude-3-sonnet-20240229-v1:0'
   }
 });
 
@@ -68,8 +68,10 @@ const schema = a.schema({
     .query()
     .arguments({ 
       s3Key: a.string().required(), 
-      tablePurpose: a.string().required(),
+      // tablePurpose: a.string().required(),
       tableColumns: a.json().required(),
+      dataToExclude: a.json(),
+      dataToInclude: a.json()
   })
     .returns(a.json())
     // .handler(a.handler.function(getInfoFromPdf))

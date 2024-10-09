@@ -100,7 +100,7 @@ async function publishMessage(chatSessionId: string, owner: string, message: Hum
 
     let input: APITypes.CreateChatMessageInput = {
         chatSessionId: chatSessionId,
-        content: messageContent || "",
+        content: messageContent || "AI Message:\n",
         owner: owner,
         tool_calls: "[]",
         tool_call_id: "",
@@ -159,7 +159,7 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
         const firstHumanMessageIndex = sortedMessages.findIndex((message) => message.role === 'human');
         const sortedMessagesStartingWithHumanMessage = sortedMessages.slice(firstHumanMessageIndex)
 
-        //Here we're using the last 10 messages for memory
+        //Here we're using the last 20 messages for memory
         const messages: BaseMessage[] = sortedMessagesStartingWithHumanMessage.map((message) => {
             if (message.role === 'human') {
                 return new HumanMessage({
@@ -186,7 +186,7 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
 
         const agentModel = new ChatBedrockConverse({
             model: process.env.MODEL_ID,
-            // temperature: 0
+            temperature: 0
         });
 
         const agent = createReactAgent({

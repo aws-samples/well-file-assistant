@@ -34,8 +34,9 @@ export const calculatorTool = tool(
 );
 
 const wellTableSchema = z.object({
-    tablePurpose: z.string().describe("The purpose for which the user is making this table"),
+    // tablePurpose: z.string().describe("The purpose for which the user is making this table"),
     dataToExclude: z.string().describe("List of criteria to exclude data from the table"),
+    dataToInclude: z.string().describe("List of criteria to include data in the table"),
     tableColumns: z.array(z.object({
         columnName: z.string().describe('The name of a column'),
         columnDescription: z.string().describe('A description of the information which this column contains. Be sure never to use the " character'),
@@ -44,7 +45,7 @@ const wellTableSchema = z.object({
 });
 
 export const wellTableTool = tool(
-    async ({ tablePurpose, tableColumns, wellApiNumber, dataToExclude }) => {
+    async ({ dataToInclude, tableColumns, wellApiNumber, dataToExclude }) => {
         const sfnClient = new SFNClient({
             region: process.env.AWS_REGION,
             maxAttempts: 3,
@@ -72,16 +73,15 @@ export const wellTableTool = tool(
         const command = new StartSyncExecutionCommand({
             stateMachineArn: env.STEP_FUNCTION_ARN,
             input: JSON.stringify({
-                tablePurpose: tablePurpose,
                 tableColumns: tableColumns,
-                s3Prefix: s3Prefix
+                dataToInclude: dataToInclude,
+                dataToExclude: dataToExclude,
+                s3Prefix: s3Prefix,
             })
         });
 
         console.log('Calling Step Function with command: ', command)
 
-
-        
         const sfnResponse = await sfnClient.send(command);
         console.log('Step Function Response: ', sfnResponse)
 
@@ -91,7 +91,8 @@ export const wellTableTool = tool(
 
         // console.log('sfnResponse.output: ', sfnResponse.output)
 
-        //Add in the source column
+        //Add in the source and relevanceScore columns
+        columnNames.push('includeScore')
         columnNames.push('source')
 
         // const numColumns = columnNames.length

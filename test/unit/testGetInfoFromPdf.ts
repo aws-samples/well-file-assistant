@@ -9,7 +9,7 @@ process.env.MODEL_ID = 'anthropic.claude-3-haiku-20240307-v1:0'
 process.env.DATA_BUCKET_NAME = outputs.storage.bucket_name
 
 const testArguments = {
-  "tablePurpose": "Creating an operational history table for well 30-039-07715, excluding rows with transporter or cathodic protection information",
+  // "tablePurpose": "Creating an operational history table for well 30-039-07715, excluding rows with transporter or cathodic protection information",
   "tableColumns": [
     {
       "columnName": "date",
@@ -32,9 +32,12 @@ const testArguments = {
       "columnDescription": "Whether the document should be included in the table or ignored due to containing transporter or cathodic protection information"
     }
   ],
+  "dataToExclude": "transporter,cathotic protection",
+  "dataToInclude": "drill,complete,repair,artificial lift",
   // s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00114.pdf" // Change in Transporter
   // s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/3003907715_24_wf_1.pdf" // Cathodic Protection
-  "s3Key": "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00112.pdf" //Drill Report
+  // "s3Key": "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00112.pdf" //Drill Report
+  s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00117.pdf" // Drill Report
 }
 
 const event: AppSyncResolverEvent<Schema['getInfoFromPdf']['args']> = {

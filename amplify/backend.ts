@@ -12,9 +12,11 @@ import * as sfnTasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as s3Deployment from 'aws-cdk-lib/aws-s3-deployment';
 import * as appSync from 'aws-cdk-lib/aws-appsync';
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { CfnApplication } from 'aws-cdk-lib/aws-sam';
+
 
 //These are for testing
 import { AwsSolutionsChecks } from 'cdk-nag'
@@ -85,7 +87,7 @@ backend.preSignUp.resources.lambda.addPermission('UserPoolInvoke', {
 });
 
 //Deploy the test data to the s3 bucket
-const wellFileDeployment = new s3Deployment.BucketDeployment(customStack, 'test-file-deployment', {
+const wellFileDeployment = new s3Deployment.BucketDeployment(customStack, 'test-file-deployment-1', {
   sources: [s3Deployment.Source.asset(path.join(rootDir, 'testData'))],
   destinationBucket: backend.storage.resources.bucket,
   destinationKeyPrefix: 'well-files/'
@@ -202,8 +204,9 @@ const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportIm
           maxConcurrency: 200,
           itemSelector: {
             "arguments": {
-              "tablePurpose.$": "$$.Execution.Input.tablePurpose",
               "tableColumns.$": "$$.Execution.Input.tableColumns",
+              "dataToExclude.$": "$$.Execution.Input.dataToExclude",
+              "dataToInclude.$": "$$.Execution.Input.dataToInclude",
               "s3Key.$": "$$.Map.Item.Value.Key",
             }
           },
@@ -275,13 +278,6 @@ backend.preSignUp.resources.lambda.addToRolePolicy(
   })
 )
 
-backend.preSignUp.resources.lambda.addToRolePolicy(
-  new iam.PolicyStatement({
-    actions: ["cognito-idp:DescribeUserPool"],
-    resources: [backend.auth.resources.userPool.userPoolArn],
-  })
-)
-
 //Add request level logging to the graphql api
 const cloudWatchLogRole = new iam.Role(customStack, 'CloudWatchLogRole', {
   assumedBy: new iam.ServicePrincipal('appsync.amazonaws.com'),
@@ -321,3 +317,4 @@ NagSuppressions.addStackSuppressions(customStack, [
 
 // Use cdk-nag on the custom stack
 Aspects.of(customStack).add(new AwsSolutionsChecks({ verbose: true }))
+

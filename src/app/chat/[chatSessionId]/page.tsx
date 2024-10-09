@@ -55,14 +55,6 @@ function Page({ params }: { params?: { chatSessionId: string } }) {
 
     }, [messages])
 
-    // //ToDo, work on error handling so that you re-direct to /login before getting the "no jwt" error
-    // useEffect(() => {
-    //     console.log("authStatus :", authStatus)
-    //     if (authStatus === 'unauthenticated') {
-    //         redirect('/login')
-    //     }
-    // }, [authStatus])
-
     //Set the chat session from params
     useEffect(() => {
         if (params && params.chatSessionId) {
@@ -179,7 +171,7 @@ function Page({ params }: { params?: { chatSessionId: string } }) {
 
     function sendMessageToChatBot(input: string, chatSessionId?: string) {
         setIsLoading(true);
-        const targetChatSessionId = chatSessionId ? chatSessionId : activeChatSession?.id //TODO fix this to not need the || "" piece
+        const targetChatSessionId = chatSessionId ? chatSessionId : activeChatSession?.id
         if (!targetChatSessionId) throw new Error("No chat session id");
 
         amplifyClient.queries.getChatResponse({ input: input, chatSessionId: targetChatSessionId }).then(

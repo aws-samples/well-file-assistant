@@ -59,7 +59,7 @@ export default function ChatUIMessage(props: ChatUIMessageProps) {
             </div>
           ) : null
           }
-          {/* {props.message.tool_name ? (
+          {props.message.tool_name ? (
             <div className={styles.btn_chabot_message_copy}>
               <Popover
                 size="medium"
@@ -80,7 +80,7 @@ export default function ChatUIMessage(props: ChatUIMessageProps) {
               </Popover>
             </div>
           ) : null
-          } */}
+          }
           <>
             <strong>{formatDate(props.message.createdAt)}</strong>
             <ReactMarkdown
@@ -98,12 +98,12 @@ export default function ChatUIMessage(props: ChatUIMessageProps) {
 
                   if (!(React.isValidElement(relevanceScoreTd))) throw new Error("Invalid second from last <td> element");
 
-                  const relevanceScoreTdValue = '10';//relevanceScoreTd?.props?.children || '10'; // Here you can impliment conditional hiding of rows
+                  const relevanceScoreTdValue = relevanceScoreTd?.props?.children || '10'; // Here you can impliment conditional hiding of rows
 
                   // console.log("relevanceScore <td> value:", relevanceScoreTdValue); // This will log the value
 
                   //Hide rows with a low relevanceScore
-                  if (hideRows && parseInt(relevanceScoreTdValue) < 6) return <tr className={styles.hiddenRow} {...props} />
+                  if (hideRows && parseInt(relevanceScoreTdValue) < 4) return <tr className={styles.hiddenRow} {...props} />
 
                   // Add a 📄 to the second from the last child in props
                   // children.splice(children.length - 2, 0, ' ���');
