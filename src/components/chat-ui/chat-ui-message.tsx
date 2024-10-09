@@ -29,11 +29,11 @@ export default function ChatUIMessage(props: ChatUIMessageProps) {
     <div>
       {props.message?.role != 'human' && (
         <Container>
-          {props.message.content.length === 0 ? (
+          {/* {props.message.content.length === 0 ? (
             <Box>
               <Spinner />
             </Box>
-          ) : null}
+          ) : null} */}
           {props.message.content.length > 0 &&
             props.showCopyButton !== false ? (
             <div className={styles.btn_chabot_message_copy}>
@@ -119,6 +119,12 @@ export default function ChatUIMessage(props: ChatUIMessageProps) {
               <div>
                 <strong>Tool Calls:</strong>
                 <pre>{JSON.stringify(JSON.parse(props.message.tool_calls), null, 2)}</pre>
+              </div>
+            ) : null
+            }
+            {props.message.tool_call_id ? (
+              <div>
+                <p>Tool Call Id: {props.message.tool_call_id}</p>
               </div>
             ) : null
             }

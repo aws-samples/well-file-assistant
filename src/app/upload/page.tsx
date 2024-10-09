@@ -10,7 +10,7 @@ import '@aws-amplify/ui-react/styles.css';
 
 const DefaultStorageManagerExample = () => {
     const [uploadTargetUwiNumber, setUploadTargetUwiNumber] = useState('')
-    const [uploadTargetWellField, setUploadTargetWellField] = useState('SanJuanEast') //ToDo, let user change the field name once the Agentic workflow can find files dynamically.
+    const [uploadTargetWellField, setUploadTargetWellField] = useState('SanJuanEast') //TODO, let user change the field name.
     return (
 
         <Container>

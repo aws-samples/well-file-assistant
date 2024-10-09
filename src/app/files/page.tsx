@@ -87,6 +87,9 @@ function Page() {
   }, [s3PathSegments]);
 
   const onRemoveObject = async (key: string) => {
+    //Create an alert to confirm the user wants to delete the file
+    if (!window.confirm(`Are you sure you want to delete ${key}?`)) return;
+
     try {
       // Delete the object from s3
       await remove({ path: key });

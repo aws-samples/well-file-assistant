@@ -49,25 +49,19 @@ export const wellTableTool = tool(
             region: process.env.AWS_REGION,
             maxAttempts: 3,
         });
-
-<<<<<<< HEAD
-        // Here add in the default table columns date and excludeRow
-=======
         //If tableColumns contains a column with columnName date, remove it. The user may ask for one, and one will automatically be added later.
-        tableColumns = tableColumns.filter(column => column.columnName !== 'date')
-
-        // Here add in the default table column date
->>>>>>> waltmayf
+        tableColumns = tableColumns.filter(column => column.columnName.toLowerCase() !== 'date')
+        // Here add in the default table columns date and excludeRow
         tableColumns.unshift({
             columnName: 'date', columnDescription: `The date of the event in YYYY-MM-DD format.`
         })
 
-        tableColumns.push({
-            columnName: 'excludeRow', columnDescription: `
-            Does this file contain any of the criteria below? 
-            ${dataToExclude}
-            `
-        })
+        // tableColumns.push({
+        //     columnName: 'excludeRow', columnDescription: `
+        //     Does this file contain any of the criteria below? 
+        //     ${dataToExclude}
+        //     `
+        // })
 
         console.log('Table Columns: ', JSON.stringify(tableColumns))
 
@@ -116,10 +110,10 @@ export const wellTableTool = tool(
         console.log('rowData: ', rowData)
 
         rowData.forEach((s3ObjectResult: any) => {
-            console.log('s3ObjectResult: ', s3ObjectResult)
-            if (s3ObjectResult.content) { //TODO maybe there's a way to do this with flow control?
+            // console.log('s3ObjectResult: ', s3ObjectResult)
+            if (s3ObjectResult.content) {
                 s3ObjectResult.content.forEach((content: any) => { //TODO give content a type based on the column names
-                    console.log('content: ', content)
+                    // console.log('content: ', content)
 
                     const newRow: string[] = []
 
@@ -147,7 +141,7 @@ export const wellTableTool = tool(
             }
         });
 
-        console.log('dataRows: ', dataRows)
+        // console.log('dataRows: ', dataRows)
         //Sort the data rows by date (first column)
         dataRows.sort((a, b) => a[0].localeCompare(b[0]));
         tableRows.push(...dataRows.map(row => row.join(' | ')))

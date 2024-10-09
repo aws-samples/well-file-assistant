@@ -80,7 +80,6 @@ function getLangChainMessageContent(message: HumanMessage | AIMessage | ToolMess
 
     let messageContent: string = ''
 
-    //TODO Address multiple elements in mesage.content
     if (message instanceof ToolMessage) {
         messageContent += `Tool Response (${message.name}): \n\n`
     }
@@ -91,10 +90,6 @@ function getLangChainMessageContent(message: HumanMessage | AIMessage | ToolMess
         messageContent += (message.content[0] as MessageContentText).text
     }
 
-    // if (message instanceof AIMessage && message.tool_calls && message.tool_calls.length > 0) {
-    //     messageContent += `\n\nTool calls: \n${JSON.stringify(message.tool_calls.map((toolCall) => toolCall.args), null, 2)}`;
-    // }
-
     return messageContent
 
 }
@@ -103,11 +98,9 @@ async function publishMessage(chatSessionId: string, owner: string, message: Hum
 
     const messageContent = getLangChainMessageContent(message)
 
-    if (!messageContent) return null
-
     let input: APITypes.CreateChatMessageInput = {
         chatSessionId: chatSessionId,
-        content: messageContent,
+        content: messageContent || "",
         owner: owner,
         tool_calls: "[]",
         tool_call_id: "",
@@ -193,7 +186,7 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
 
         const agentModel = new ChatBedrockConverse({
             model: process.env.MODEL_ID,
-            temperature: 0
+            // temperature: 0
         });
 
         const agent = createReactAgent({
@@ -213,6 +206,7 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
             const newMessage: BaseMessage = chunk.messages[chunk.messages.length - 1];
 
             if (!(newMessage instanceof HumanMessage)) {
+                console.log('newMessage: ', newMessage)
                 await publishMessage(event.arguments.chatSessionId, event.identity.sub, newMessage)
             }
         }

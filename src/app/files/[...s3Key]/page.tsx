@@ -22,7 +22,6 @@ export default function Page({ params }: { params: { s3Key: string[] } }) {
     }
     ).catch((error) => {
       console.error('error: ', error)
-      return "" //TODO remove this
     }
     )
   }, [params.s3Key])

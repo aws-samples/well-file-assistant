@@ -1,6 +1,6 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
-import { data, getChatResponesHandler, getInfoFromPdf } from './data/resource';
+import { data, getChatResponesHandler } from './data/resource';
 import { preSignUp } from './functions/preSignUp/resource';
 import { storage } from './storage/resource';
 import * as cdk from 'aws-cdk-lib'
@@ -36,7 +36,7 @@ const backend = defineBackend({
   data,
   storage,
   getChatResponesHandler,
-  getInfoFromPdf,
+  // getInfoFromPdf,
   preSignUp
 });
 
@@ -199,7 +199,7 @@ const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportIm
         new sfn.Map(customStack, 'Map lambda to s3 keys', {
           inputPath: '$.s3Result.Contents',
           itemsPath: '$',
-          maxConcurrency: 10, //TODO Increase this to 200 when the Bedrock service limit issue is resolved
+          maxConcurrency: 200,
           itemSelector: {
             "arguments": {
               "tablePurpose.$": "$$.Execution.Input.tablePurpose",
@@ -213,13 +213,13 @@ const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportIm
             lambdaFunction: queryReportImageLambda,
             payloadResponseOnly: true,
           }).addRetry({
-            maxAttempts: 20,
+            maxAttempts: 10,
+            interval: cdk.Duration.seconds(1),
             maxDelay: cdk.Duration.seconds(5),
             errors: [
               'ThrottlingException',
               // 'ValidationException' //This one is rare, but can be triggered by a claude model returning: Output blocked by content filtering policy
             ],
-            interval: cdk.Duration.seconds(1),
             jitterStrategy: sfn.JitterType.FULL,
           })
           )
@@ -236,7 +236,8 @@ backend.getChatResponesHandler.resources.lambda.addToRolePolicy(
     actions: ["bedrock:InvokeModel"],
     resources: [
       `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0`,
-      `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0`
+      `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0`,
+      `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0`
     ],
   })
 )
@@ -248,24 +249,24 @@ backend.getChatResponesHandler.resources.lambda.addToRolePolicy(
   })
 )
 
-backend.getInfoFromPdf.resources.lambda.addToRolePolicy(
-  new iam.PolicyStatement({
-    actions: ["bedrock:InvokeModel"],
-    resources: [
-      `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0`,
-      `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0`
-    ],
-  })
-)
+// backend.getInfoFromPdf.resources.lambda.addToRolePolicy(
+//   new iam.PolicyStatement({
+//     actions: ["bedrock:InvokeModel"],
+//     resources: [
+//       `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0`,
+//       `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0`
+//     ],
+//   })
+// )
 
-backend.getInfoFromPdf.resources.lambda.addToRolePolicy(
-  new iam.PolicyStatement({
-    actions: ["s3:GetObject"],
-    resources: [
-      `arn:aws:s3:::${dataBucketName}/*`
-    ],
-  })
-)
+// backend.getInfoFromPdf.resources.lambda.addToRolePolicy(
+//   new iam.PolicyStatement({
+//     actions: ["s3:GetObject"],
+//     resources: [
+//       `arn:aws:s3:::${dataBucketName}/*`
+//     ],
+//   })
+// )
 
 backend.preSignUp.resources.lambda.addToRolePolicy(
   new iam.PolicyStatement({
