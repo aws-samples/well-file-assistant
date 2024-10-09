@@ -9,37 +9,38 @@ process.env.MODEL_ID = 'anthropic.claude-3-haiku-20240307-v1:0'
 process.env.DATA_BUCKET_NAME = outputs.storage.bucket_name
 
 const event: AppSyncResolverEvent<Schema['getInfoFromPdf']['args']> = {
-  arguments: {
-    tablePurpose: "Generate a well history showing operational events for the well",
-    tableColumns: [
+  "arguments": {
+    "tableColumns": [
       {
         "columnName": "date",
-        "columnDescription": "\n            The date of the event in YYYY-MM-DD format. Only use format YYYY-MM-DD.\n            This column should only contain dates in the YYYY-MM-DD format.\n            Assume two digit dates less than 30 are in the 2000s and the rest are in the 1900s\n            If there is no date, leave this field blank.\n            "
+        "columnDescription": "The date of the event in YYYY-MM-DD format."
       },
       {
-        "columnName": "Operation",
+        "columnName": "Operation Type",
         "columnDescription": "The type of operation performed on the well"
       },
       {
-        "columnName": "Details",
-        "columnDescription": "Text describing details of the operation from the report"
+        "columnName": "Operational Details",
+        "columnDescription": "Text from the report describing details of the operation"
       },
       {
-        "columnName": "Document",
-        "columnDescription": "The title of the document describing the operation details"
+        "columnName": "Document Title",
+        "columnDescription": "The title of the document the information came from"
       },
       {
-        "columnName": "excludeRow",
-        "columnDescription": `
-            Does this document contain one of the following phrases?
-            changes in transporter, certificate
-            `
-            //changes in transporter, certificate 
+        "columnName": "Frac Water Volume",
+        "columnDescription": "Total volume of water pumped for hydraulic fracturing"
+      },
+      {
+        "columnName": "Proppant Volume",
+        "columnDescription": "Total proppant volume pumped for hydraulic fracturing"
       }
     ],
+    "tablePurpose": "Operational history with frac details for a well",
     // s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00114.pdf" // Change in Transporter
     // s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/3003907715_24_wf_1.pdf" // Cathodic Protection
-    s3Key: "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00112.pdf" //Drill Report
+    "s3Key": "well-files/field=SanJuanEast/uwi=30-039-07715/30-039-07715_00112.pdf" //Drill Report
+
   },
   source: null,
   request: {

@@ -50,7 +50,14 @@ export const wellTableTool = tool(
             maxAttempts: 3,
         });
 
+<<<<<<< HEAD
         // Here add in the default table columns date and excludeRow
+=======
+        //If tableColumns contains a column with columnName date, remove it. The user may ask for one, and one will automatically be added later.
+        tableColumns = tableColumns.filter(column => column.columnName !== 'date')
+
+        // Here add in the default table column date
+>>>>>>> waltmayf
         tableColumns.unshift({
             columnName: 'date', columnDescription: `The date of the event in YYYY-MM-DD format.`
         })
@@ -79,11 +86,13 @@ export const wellTableTool = tool(
 
         console.log('Calling Step Function with command: ', command)
 
+
+        
         const sfnResponse = await sfnClient.send(command);
         console.log('Step Function Response: ', sfnResponse)
 
         if (!sfnResponse.output) {
-            throw new Error('No output from step function');
+            throw new Error(`No output from step function. Step function response:\n${JSON.stringify(sfnResponse, null,2)}`);
         }
 
         // console.log('sfnResponse.output: ', sfnResponse.output)

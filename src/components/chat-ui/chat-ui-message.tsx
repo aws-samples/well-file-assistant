@@ -93,7 +93,7 @@ export default function ChatUIMessage(props: ChatUIMessageProps) {
 
                   //Get the value of the relevance score in each table row
                   const children = React.Children.toArray(props.children);
-
+                  
                   const relevanceScoreTd = children[children.length - 2]; // should be second from the last
 
                   if (!(React.isValidElement(relevanceScoreTd))) throw new Error("Invalid second from last <td> element");
@@ -104,6 +104,11 @@ export default function ChatUIMessage(props: ChatUIMessageProps) {
 
                   //Hide rows with a low relevanceScore
                   if (hideRows && parseInt(relevanceScoreTdValue) < 6) return <tr className={styles.hiddenRow} {...props} />
+
+                  // Add a 📄 to the second from the last child in props
+                  // children.splice(children.length - 2, 0, ' ���');
+                  // children[children.length - 2].props?.children = 'hello'
+
                   else return <tr {...props} />
                 },
               }}

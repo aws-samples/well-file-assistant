@@ -38,7 +38,12 @@ interface JsonSchema {
 }
 
 function removeSpaceAndLowerCase(str: string): string {
-    return str.replace(" ", "").toLowerCase();
+    //return a string that matches regex pattern '^[a-zA-Z0-9_-]{1,64}$'
+    let transformed = str.replaceAll(" ", "").toLowerCase()
+    transformed = transformed.replace(/[^a-zA-Z0-9_-]/g, '');
+    transformed = transformed.slice(0, 64);
+
+    return transformed;
 }
 
 function createJsonSchema(columnList: Column[]): JsonSchema {
@@ -121,6 +126,7 @@ async function convertPdfToB64Strings(s3Key: string,): Promise<string[]> {
 
 export const handler: Schema["getInfoFromPdf"]["functionHandler"] = async (event, context) => {
 
+    // throw new Error("This function is not implemented yet");
     // console.log('event: ', event)
     // console.log('context: ', context)
     // console.log('Amplify env: ', env)
