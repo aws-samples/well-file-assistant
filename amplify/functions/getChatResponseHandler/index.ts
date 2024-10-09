@@ -1,7 +1,7 @@
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { Schema } from '../../data/resource';
-import { env } from '$amplify/env/getChatResponseHandler'; // replace with your function name
+import { env } from '$amplify/env/getChatResponseHandler';
 
 import { ChatBedrockConverse } from "@langchain/aws";
 import { HumanMessage, AIMessage, ToolMessage, BaseMessage, MessageContentText } from "@langchain/core/messages";
