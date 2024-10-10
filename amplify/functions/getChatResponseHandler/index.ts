@@ -182,6 +182,21 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
             }
         })
 
+        // If the latest human message didn't make it into the query, add it here.
+        if (
+            messages &&
+            messages[messages.length - 1] &&
+            !(messages[messages.length - 1] instanceof HumanMessage)
+        ) {
+            messages.push(
+                new HumanMessage({
+                    content: event.arguments.input,
+                })
+            )
+        } else {
+            console.log('Last message in query is a human message')
+        }
+
         console.log("mesages in langchain form: ", messages)
 
         const agentModel = new ChatBedrockConverse({
