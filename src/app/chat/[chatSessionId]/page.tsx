@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 
 import { formatDate } from "@/utils/date-utils";
 
-import SideNavigation from "@cloudscape-design/components/side-navigation";
+// import SideNavigation from "@cloudscape-design/components/side-navigation";
 
 import styles from './page.module.css'
 import '@aws-amplify/ui-react/styles.css'
@@ -37,13 +37,23 @@ function Page({ params }: { params?: { chatSessionId: string } }) {
     const { user, signOut } = useAuthenticator((context) => [context.user]);
     const router = useRouter();
 
-    // //ToDo, work on error handling so that you re-direct to /login before getting the "no jwt" error
-    // useEffect(() => {
-    //     console.log("authStatus :", authStatus)
-    //     if (authStatus === 'unauthenticated') {
-    //         redirect('/login')
-    //     }
-    // }, [authStatus])
+    useEffect(() => {
+        console.log("Messages: ", messages)
+        if (messages.length){
+            console.log("Last Message: ", messages[messages.length-1])
+            // console.log("No tool calls?", messages[messages.length-1].tool_calls === "[]")
+        }
+
+        
+
+        // If the last message is from ai and has no tool call, set isLoading to false
+        if (
+            messages.length && 
+            messages[messages.length-1].role === "ai" && 
+            messages[messages.length-1].tool_calls === "[]"
+        ) setIsLoading(false)
+
+    }, [messages])
 
     //Set the chat session from params
     useEffect(() => {
@@ -85,10 +95,10 @@ function Page({ params }: { params?: { chatSessionId: string } }) {
                 }
             }).subscribe({
                 next: ({ items, isSynced }) => {
-                    if (isSynced && items[items.length] && items[items.length].role === "ai") setIsLoading(false)
-
-
+                    
                     setMessages((prevMessages) => combineAndSortMessages(prevMessages, items))
+
+
 
                     // if (isSynced) {
                     //     //Order the data items
@@ -109,9 +119,7 @@ function Page({ params }: { params?: { chatSessionId: string } }) {
 
     }, [activeChatSession])
 
-    // useEffect(() => {
-    //     console.log("Messages: ", messages)
-    // }, [messages])
+    
 
     async function createChatSession(firstMessage?: string) {
         amplifyClient.models.ChatSession.create({ firstMessage: firstMessage }).then(({ data: newChatSession }) => {
@@ -163,7 +171,7 @@ function Page({ params }: { params?: { chatSessionId: string } }) {
 
     function sendMessageToChatBot(input: string, chatSessionId?: string) {
         setIsLoading(true);
-        const targetChatSessionId = chatSessionId ? chatSessionId : activeChatSession?.id //TODO fix this to not need the || "" piece
+        const targetChatSessionId = chatSessionId ? chatSessionId : activeChatSession?.id
         if (!targetChatSessionId) throw new Error("No chat session id");
 
         amplifyClient.queries.getChatResponse({ input: input, chatSessionId: targetChatSessionId }).then(
@@ -171,7 +179,6 @@ function Page({ params }: { params?: { chatSessionId: string } }) {
                 console.log("bot response: ", response)
                 // if (response.data) addChatMessage(response.data, "AI", targetChatSessionId)
                 // else throw new Error("No response from bot");
-                setIsLoading(false);
             }
         )
     }

@@ -1,6 +1,6 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
-import { data, getChatResponesHandler, getInfoFromPdf } from './data/resource';
+import { data, getChatResponesHandler } from './data/resource';
 import { preSignUp } from './functions/preSignUp/resource';
 import { storage } from './storage/resource';
 import * as cdk from 'aws-cdk-lib'
@@ -12,9 +12,11 @@ import * as sfnTasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as s3Deployment from 'aws-cdk-lib/aws-s3-deployment';
 import * as appSync from 'aws-cdk-lib/aws-appsync';
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { CfnApplication } from 'aws-cdk-lib/aws-sam';
+
 
 //These are for testing
 import { AwsSolutionsChecks } from 'cdk-nag'
@@ -36,7 +38,7 @@ const backend = defineBackend({
   data,
   storage,
   getChatResponesHandler,
-  getInfoFromPdf,
+  // getInfoFromPdf,
   preSignUp
 });
 
@@ -85,7 +87,7 @@ backend.preSignUp.resources.lambda.addPermission('UserPoolInvoke', {
 });
 
 //Deploy the test data to the s3 bucket
-const wellFileDeployment = new s3Deployment.BucketDeployment(customStack, 'test-file-deployment', {
+const wellFileDeployment = new s3Deployment.BucketDeployment(customStack, 'test-file-deployment-1', {
   sources: [s3Deployment.Source.asset(path.join(rootDir, 'testData'))],
   destinationBucket: backend.storage.resources.bucket,
   destinationKeyPrefix: 'well-files/'
@@ -166,7 +168,7 @@ const queryReportImageLambda = new NodejsFunction(customStack, 'QueryReportImage
 });
 
 // Create a Step Functions state machine
-const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportImagesStateMachine2', {
+const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportImagesStateMachine', {
   timeout: cdk.Duration.minutes(15),
   stateMachineType: sfn.StateMachineType.EXPRESS,
   logs: {
@@ -199,11 +201,12 @@ const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportIm
         new sfn.Map(customStack, 'Map lambda to s3 keys', {
           inputPath: '$.s3Result.Contents',
           itemsPath: '$',
-          maxConcurrency: 10, //TODO Increase this to 200 when the Bedrock service limit issue is resolved
+          maxConcurrency: 200,
           itemSelector: {
             "arguments": {
-              "tablePurpose.$": "$$.Execution.Input.tablePurpose",
               "tableColumns.$": "$$.Execution.Input.tableColumns",
+              "dataToExclude.$": "$$.Execution.Input.dataToExclude",
+              "dataToInclude.$": "$$.Execution.Input.dataToInclude",
               "s3Key.$": "$$.Map.Item.Value.Key",
             }
           },
@@ -213,13 +216,13 @@ const queryImagesStateMachine = new sfn.StateMachine(customStack, 'QueryReportIm
             lambdaFunction: queryReportImageLambda,
             payloadResponseOnly: true,
           }).addRetry({
-            maxAttempts: 20,
+            maxAttempts: 10,
+            interval: cdk.Duration.seconds(1),
             maxDelay: cdk.Duration.seconds(5),
             errors: [
               'ThrottlingException',
               // 'ValidationException' //This one is rare, but can be triggered by a claude model returning: Output blocked by content filtering policy
             ],
-            interval: cdk.Duration.seconds(1),
             jitterStrategy: sfn.JitterType.FULL,
           })
           )
@@ -236,7 +239,8 @@ backend.getChatResponesHandler.resources.lambda.addToRolePolicy(
     actions: ["bedrock:InvokeModel"],
     resources: [
       `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0`,
-      `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0`
+      `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0`,
+      `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0`
     ],
   })
 )
@@ -248,36 +252,29 @@ backend.getChatResponesHandler.resources.lambda.addToRolePolicy(
   })
 )
 
-backend.getInfoFromPdf.resources.lambda.addToRolePolicy(
-  new iam.PolicyStatement({
-    actions: ["bedrock:InvokeModel"],
-    resources: [
-      `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0`,
-      `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0`
-    ],
-  })
-)
+// backend.getInfoFromPdf.resources.lambda.addToRolePolicy(
+//   new iam.PolicyStatement({
+//     actions: ["bedrock:InvokeModel"],
+//     resources: [
+//       `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0`,
+//       `arn:aws:bedrock:${rootStack.region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0`
+//     ],
+//   })
+// )
 
-backend.getInfoFromPdf.resources.lambda.addToRolePolicy(
-  new iam.PolicyStatement({
-    actions: ["s3:GetObject"],
-    resources: [
-      `arn:aws:s3:::${dataBucketName}/*`
-    ],
-  })
-)
+// backend.getInfoFromPdf.resources.lambda.addToRolePolicy(
+//   new iam.PolicyStatement({
+//     actions: ["s3:GetObject"],
+//     resources: [
+//       `arn:aws:s3:::${dataBucketName}/*`
+//     ],
+//   })
+// )
 
 backend.preSignUp.resources.lambda.addToRolePolicy(
   new iam.PolicyStatement({
     actions: ["ssm:GetParameter"],
     resources: [ssmParameter.parameterArn],
-  })
-)
-
-backend.preSignUp.resources.lambda.addToRolePolicy(
-  new iam.PolicyStatement({
-    actions: ["cognito-idp:DescribeUserPool"],
-    resources: [backend.auth.resources.userPool.userPoolArn],
   })
 )
 
@@ -320,3 +317,4 @@ NagSuppressions.addStackSuppressions(customStack, [
 
 // Use cdk-nag on the custom stack
 Aspects.of(customStack).add(new AwsSolutionsChecks({ verbose: true }))
+

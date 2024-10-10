@@ -34,8 +34,9 @@ export const calculatorTool = tool(
 );
 
 const wellTableSchema = z.object({
-    tablePurpose: z.string().describe("The purpose for which the user is making this table"),
-    // dataToExclude: z.string().describe("List of criteria to exclude data from the table"),
+    // tablePurpose: z.string().describe("The purpose for which the user is making this table"),
+    dataToExclude: z.string().describe("List of criteria to exclude data from the table"),
+    dataToInclude: z.string().describe("List of criteria to include data in the table"),
     tableColumns: z.array(z.object({
         columnName: z.string().describe('The name of a column'),
         columnDescription: z.string().describe('A description of the information which this column contains. Be sure never to use the " character'),
@@ -44,20 +45,22 @@ const wellTableSchema = z.object({
 });
 
 export const wellTableTool = tool(
-    async ({ tablePurpose, tableColumns, wellApiNumber }) => {
+    async ({ dataToInclude, tableColumns, wellApiNumber, dataToExclude }) => {
         const sfnClient = new SFNClient({
             region: process.env.AWS_REGION,
             maxAttempts: 3,
         });
-
-        // Here add in the default table column date
+        //If tableColumns contains a column with columnName date, remove it. The user may ask for one, and one will automatically be added later.
+        tableColumns = tableColumns.filter(column => column.columnName.toLowerCase() !== 'date')
+        // Here add in the default table columns date and excludeRow
         tableColumns.unshift({
             columnName: 'date', columnDescription: `The date of the event in YYYY-MM-DD format.`
         })
 
         // tableColumns.push({
-        //     columnName: 'excludedPhrases', columnDescription: `
-        //     Write a list of line numbers where one of the following is mentioned: ${dataToExclude}
+        //     columnName: 'excludeRow', columnDescription: `
+        //     Does this file contain any of the criteria below? 
+        //     ${dataToExclude}
         //     `
         // })
 
@@ -70,10 +73,10 @@ export const wellTableTool = tool(
         const command = new StartSyncExecutionCommand({
             stateMachineArn: env.STEP_FUNCTION_ARN,
             input: JSON.stringify({
-                // prompt: { tablePurpose: tablePurpose, dataToExclude: dataToExclude,tableColumns: tableColumns },
-                tablePurpose: tablePurpose,
                 tableColumns: tableColumns,
-                s3Prefix: s3Prefix
+                dataToInclude: dataToInclude,
+                dataToExclude: dataToExclude,
+                s3Prefix: s3Prefix,
             })
         });
 
@@ -83,12 +86,13 @@ export const wellTableTool = tool(
         console.log('Step Function Response: ', sfnResponse)
 
         if (!sfnResponse.output) {
-            throw new Error('No output from step function');
+            throw new Error(`No output from step function. Step function response:\n${JSON.stringify(sfnResponse, null,2)}`);
         }
 
         // console.log('sfnResponse.output: ', sfnResponse.output)
 
-        //Add in the source column
+        //Add in the source and relevanceScore columns
+        columnNames.push('includeScore')
         columnNames.push('source')
 
         // const numColumns = columnNames.length
@@ -107,10 +111,10 @@ export const wellTableTool = tool(
         console.log('rowData: ', rowData)
 
         rowData.forEach((s3ObjectResult: any) => {
-            console.log('s3ObjectResult: ', s3ObjectResult)
-            if (s3ObjectResult.content) { //TODO maybe there's a way to do this with flow control?
+            // console.log('s3ObjectResult: ', s3ObjectResult)
+            if (s3ObjectResult.content) {
                 s3ObjectResult.content.forEach((content: any) => { //TODO give content a type based on the column names
-                    console.log('content: ', content)
+                    // console.log('content: ', content)
 
                     const newRow: string[] = []
 
@@ -138,7 +142,7 @@ export const wellTableTool = tool(
             }
         });
 
-        console.log('dataRows: ', dataRows)
+        // console.log('dataRows: ', dataRows)
         //Sort the data rows by date (first column)
         dataRows.sort((a, b) => a[0].localeCompare(b[0]));
         tableRows.push(...dataRows.map(row => row.join(' | ')))

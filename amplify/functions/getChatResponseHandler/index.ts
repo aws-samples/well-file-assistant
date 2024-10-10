@@ -1,7 +1,7 @@
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { Schema } from '../../data/resource';
-import { env } from '$amplify/env/getChatResponseHandler'; // replace with your function name
+import { env } from '$amplify/env/getChatResponseHandler';
 
 import { ChatBedrockConverse } from "@langchain/aws";
 import { HumanMessage, AIMessage, ToolMessage, BaseMessage, MessageContentText } from "@langchain/core/messages";
@@ -80,7 +80,6 @@ function getLangChainMessageContent(message: HumanMessage | AIMessage | ToolMess
 
     let messageContent: string = ''
 
-    //TODO Address multiple elements in mesage.content
     if (message instanceof ToolMessage) {
         messageContent += `Tool Response (${message.name}): \n\n`
     }
@@ -91,10 +90,6 @@ function getLangChainMessageContent(message: HumanMessage | AIMessage | ToolMess
         messageContent += (message.content[0] as MessageContentText).text
     }
 
-    // if (message instanceof AIMessage && message.tool_calls && message.tool_calls.length > 0) {
-    //     messageContent += `\n\nTool calls: \n${JSON.stringify(message.tool_calls.map((toolCall) => toolCall.args), null, 2)}`;
-    // }
-
     return messageContent
 
 }
@@ -103,11 +98,9 @@ async function publishMessage(chatSessionId: string, owner: string, message: Hum
 
     const messageContent = getLangChainMessageContent(message)
 
-    if (!messageContent) return null
-
     let input: APITypes.CreateChatMessageInput = {
         chatSessionId: chatSessionId,
-        content: messageContent,
+        content: messageContent || "AI Message:\n",
         owner: owner,
         tool_calls: "[]",
         tool_call_id: "",
@@ -166,7 +159,7 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
         const firstHumanMessageIndex = sortedMessages.findIndex((message) => message.role === 'human');
         const sortedMessagesStartingWithHumanMessage = sortedMessages.slice(firstHumanMessageIndex)
 
-        //Here we're using the last 10 messages for memory
+        //Here we're using the last 20 messages for memory
         const messages: BaseMessage[] = sortedMessagesStartingWithHumanMessage.map((message) => {
             if (message.role === 'human') {
                 return new HumanMessage({
@@ -188,6 +181,21 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
                 })
             }
         })
+
+        // If the latest human message didn't make it into the query, add it here.
+        if (
+            messages &&
+            messages[messages.length - 1] &&
+            !(messages[messages.length - 1] instanceof HumanMessage)
+        ) {
+            messages.push(
+                new HumanMessage({
+                    content: event.arguments.input,
+                })
+            )
+        } else {
+            console.log('Last message in query is a human message')
+        }
 
         console.log("mesages in langchain form: ", messages)
 
@@ -213,6 +221,7 @@ export const handler: Schema["getChatResponse"]["functionHandler"] = async (even
             const newMessage: BaseMessage = chunk.messages[chunk.messages.length - 1];
 
             if (!(newMessage instanceof HumanMessage)) {
+                console.log('newMessage: ', newMessage)
                 await publishMessage(event.arguments.chatSessionId, event.identity.sub, newMessage)
             }
         }
