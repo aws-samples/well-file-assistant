@@ -27,7 +27,7 @@
     "aws-amplify": "^6.5.2",
     "gm": "^1.25.0",
     "jsonschema": "^1.4.1",
-    "langchain": "^0.2.12",
+    "langchain": "^0.2.20",
     "next": "14.2.10",
     "pdf-lib": "^1.17.1",
     "react": "^18",
