@@ -19,7 +19,7 @@
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@langchain/aws": "^0.0.6",
-    "@langchain/community": "^0.2.28",
+    "@langchain/community": "^0.3.10",
     "@langchain/langgraph": "^0.0.34",
     "@mui/material": "^6.0.2",
     "@nextui-org/react": "^2.4.2",
